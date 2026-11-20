@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,11 +13,12 @@ except ImportError:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("=" * 60)
-    print("🌍 WAYFARER – COMMUNITY TRIP INTEL & TRAVELER Q&A PLATFORM READY")
+    port = os.environ.get("PORT", "8001")
+    print("=" * 65)
+    print(f"🌍 WAYFARER – TRAVEL COMMUNITY & HOTEL INTEL API (Port: {port})")
     print("• API Routes mounted at: /api/v1")
-    print("• Trip Sharing, Pros/Cons, Hotel Inquiries & AI Travel Intel: ACTIVE")
-    print("=" * 60)
+    print("• Ready for Vercel Frontend & Render Cloud Deployment")
+    print("=" * 65)
     yield
 
 
@@ -27,10 +29,24 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS Middleware
+# Robust CORS Configuration: handles localhost dev, Render backend, and any Vercel domain
+cors_env = os.environ.get("CORS_ORIGINS", "")
+origins = [
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+]
+if cors_env:
+    for item in cors_env.split(","):
+        trimmed = item.strip()
+        if trimmed and trimmed not in origins:
+            origins.append(trimmed)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -41,4 +57,19 @@ app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/health")
 async def health_check():
-    return {"status": "online", "app": "Wayfarer Travel Community", "version": "2.0.0"}
+    return {
+        "status": "online",
+        "app": "Wayfarer Travel Community API",
+        "version": "2.0.0",
+        "environment": "production" if os.environ.get("RENDER") else "development",
+    }
+
+
+@app.get("/")
+async def root():
+    return {
+        "app": "Wayfarer Travel Community API",
+        "docs": "/docs",
+        "health": "/health",
+        "api_v1": "/api/v1",
+    }

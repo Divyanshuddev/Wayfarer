@@ -127,11 +127,11 @@ export default function HomePage() {
         </div>
 
         <div className="p-4 rounded-2xl bg-[#0c0b14]/80 border border-[#222036] space-y-1">
-          <p className="text-[11px] font-mono-retro text-gray-400 uppercase">BACKEND API</p>
+          <p className="text-[11px] font-mono-retro text-gray-400 uppercase">COMMUNITY TRUST</p>
           <p className="text-xl sm:text-2xl font-bold font-mono-retro text-purple-400">
-            FastAPI :8001
+            4.9 / 5.0 ★
           </p>
-          <p className="text-[10px] text-emerald-400">Microservice Online</p>
+          <p className="text-[10px] text-emerald-400">100% Unbiased Advice</p>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { QuestionCard } from "@/components/qa/QuestionCard";
+import { getApiBaseUrl } from "@/lib/api-config";
 import { tripStore } from "@/lib/storage/trip-store";
 import { AITravelAdvice, TripQuestion } from "@/types/trip";
 import {
@@ -86,8 +87,8 @@ export default function QAHubPage() {
 
     setIsQueryingAI(true);
     try {
-      // 1. Try FastAPI backend on :8001
-      const res = await fetch("http://localhost:8001/api/v1/qa/ai-advice", {
+      // 1. Try FastAPI backend
+      const res = await fetch(`${getApiBaseUrl()}/api/v1/qa/ai-advice`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ destination: advisorCity.trim() }),
@@ -200,7 +201,7 @@ export default function QAHubPage() {
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-gray-100 flex items-center gap-2">
-                FastAPI AI Travel Intel & Hotel Price Estimator
+                AI Travel Intel & Hotel Price Estimator
                 <span className="text-[10px] font-mono-retro px-1.5 py-0.2 rounded bg-sky-950 text-sky-300 border border-sky-800">
                   gpt-4o-mini
                 </span>
@@ -283,11 +284,10 @@ export default function QAHubPage() {
           <button
             key={cat.id}
             onClick={() => setSelectedCategory(cat.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-mono-retro whitespace-nowrap transition-all ${
-              selectedCategory === cat.id
-                ? "bg-sky-500 text-white font-medium shadow-[0_0_10px_rgba(56,189,248,0.3)]"
-                : "bg-[#141224] text-gray-400 border border-[#252238] hover:text-white"
-            }`}
+            className={`px-3 py-1.5 rounded-xl text-xs font-mono-retro whitespace-nowrap transition-all ${selectedCategory === cat.id
+              ? "bg-sky-500 text-white font-medium shadow-[0_0_10px_rgba(56,189,248,0.3)]"
+              : "bg-[#141224] text-gray-400 border border-[#252238] hover:text-white"
+              }`}
           >
             {cat.label}
           </button>

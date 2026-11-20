@@ -7,11 +7,11 @@ import {
   Reminder,
   SearchResult,
 } from "@/types";
+import { getApiBaseUrl } from "./api-config";
 import { shadowStore } from "./storage/store";
 import { createClient, isSupabaseConfigured } from "./supabase/client";
 
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8001/api/v1";
+const API_BASE_URL = `${getApiBaseUrl()}/api/v1`;
 
 class ApiClient {
   private async getAuthHeaders(): Promise<HeadersInit> {

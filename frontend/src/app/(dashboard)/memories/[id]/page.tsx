@@ -1,13 +1,17 @@
-import { MemoryDetailView } from "@/components/memories/MemoryDetailView";
-import React from "react";
+"use client";
 
-export const dynamic = "force-dynamic";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function MemoryDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  return <MemoryDetailView memoryId={id} />;
+export default function LegacyMemoryDetailPage() {
+  const router = useRouter();
+  useEffect(() => {
+    router.replace("/trips");
+  }, [router]);
+
+  return (
+    <div className="p-8 text-center text-xs font-mono-retro text-gray-400">
+      Redirecting to Community Trips...
+    </div>
+  );
 }

@@ -5,25 +5,15 @@ import { tripStore } from "@/lib/storage/trip-store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   Bell,
-  Brain,
-  ChevronDown,
   Clock,
   Compass,
-  Cpu,
   FolderHeart,
   Globe,
-  HelpCircle,
-  Hotel,
-  LayoutDashboard,
   LogOut,
-  MapPin,
   MessageSquare,
   Plus,
-  Radio,
   Search,
   Settings,
-  ShieldCheck,
-  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -40,7 +30,6 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
   const [questionCount, setQuestionCount] = useState(0);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [isModelsExpanded, setIsModelsExpanded] = useState(true);
 
   useEffect(() => {
     const update = () => {
@@ -86,7 +75,7 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
 
   const navSections: NavSection[] = [
     {
-      title: "COMMUNITY PLATFORM",
+      title: "COMMUNITY",
       items: [
         { href: "/", label: "Explore & Trending", icon: Compass },
         { href: "/trips", label: "All Trips & Reviews", icon: Globe, count: tripCount },
@@ -94,7 +83,7 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
       ],
     },
     {
-      title: "DISCOVER & ITINERARIES",
+      title: "DISCOVER",
       items: [
         { href: "/collections", label: "Curated Collections", icon: FolderHeart },
         { href: "/timeline", label: "Travel Timeline", icon: Clock },
@@ -102,26 +91,11 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
         { href: "/search", label: "Search Destinations", icon: Search, badge: "⌘F" },
       ],
     },
-  ];
-
-  const backendEngines = [
     {
-      name: "FastAPI v2.0 Microservice",
-      role: "Travel REST API & Data Store (:8001)",
-      status: "ONLINE",
-      color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
-    },
-    {
-      name: "GPT-4o-mini Advisor",
-      role: "Hotel Price Estimator & Pros/Cons Analyzer",
-      status: "ACTIVE",
-      color: "text-sky-400 bg-sky-500/10 border-sky-500/30",
-    },
-    {
-      name: "text-embedding-3",
-      role: "Semantic Destination & Hotel Matcher",
-      status: "INDEXED",
-      color: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+      title: "ACCOUNT",
+      items: [
+        { href: "/settings", label: "Profile & Preferences", icon: Settings },
+      ],
     },
   ];
 
@@ -150,18 +124,6 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
           </Link>
         </div>
 
-        {/* System Status Banner */}
-        <div className="px-4 py-2 bg-[#08070e] border-b border-[#1b1928] flex items-center justify-between text-[10px] font-mono-retro text-gray-400">
-          <span className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-emerald-400/90 font-medium">FASTAPI :8001</span>
-          </span>
-          <span className="text-sky-400/90 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3 text-sky-400" />
-            <span>VERIFIED ADVICE</span>
-          </span>
-        </div>
-
         {/* Quick Share CTA Button */}
         <div className="p-3">
           <button
@@ -180,7 +142,6 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
 
         {/* Scrollable Navigation Body */}
         <div className="flex-1 px-3 py-1 space-y-4 overflow-y-auto custom-scrollbar">
-          {/* Main Navigation Sections */}
           {navSections.map((section) => (
             <div key={section.title} className="space-y-1">
               <p className="px-3 text-[10px] font-mono-retro font-semibold tracking-wider text-[#5C5873] uppercase">
@@ -197,26 +158,29 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group ${isActive
-                        ? "bg-sky-950/40 text-sky-200 border border-sky-500/40 shadow-[0_0_12px_rgba(56,189,248,0.15)]"
-                        : "text-[#8E8AA6] hover:text-[#F4F3F8] hover:bg-[#161524] border border-transparent"
-                        }`}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group ${
+                        isActive
+                          ? "bg-sky-950/40 text-sky-200 border border-sky-500/40 shadow-[0_0_12px_rgba(56,189,248,0.15)]"
+                          : "text-[#8E8AA6] hover:text-[#F4F3F8] hover:bg-[#161524] border border-transparent"
+                      }`}
                     >
                       <div className="flex items-center gap-2.5">
                         <Icon
-                          className={`w-4 h-4 transition-colors ${isActive
-                            ? "text-sky-400"
-                            : "text-[#8E8AA6] group-hover:text-sky-300"
-                            }`}
+                          className={`w-4 h-4 transition-colors ${
+                            isActive
+                              ? "text-sky-400"
+                              : "text-[#8E8AA6] group-hover:text-sky-300"
+                          }`}
                         />
                         <span>{link.label}</span>
                       </div>
                       {link.count !== undefined && (
                         <span
-                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono-retro ${isActive
-                            ? "bg-sky-800/60 text-sky-300"
-                            : "bg-[#181628] text-[#8E8AA6] group-hover:text-gray-300"
-                            }`}
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono-retro ${
+                            isActive
+                              ? "bg-sky-800/60 text-sky-300"
+                              : "bg-[#181628] text-[#8E8AA6] group-hover:text-gray-300"
+                          }`}
                         >
                           {link.count}
                         </span>
@@ -232,74 +196,6 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
               </div>
             </div>
           ))}
-
-          {/* AI Engines & Backend Section */}
-          <div className="space-y-1.5 pt-1">
-            <button
-              onClick={() => setIsModelsExpanded(!isModelsExpanded)}
-              className="w-full flex items-center justify-between px-3 text-[10px] font-mono-retro font-semibold tracking-wider text-[#5C5873] uppercase hover:text-[#8E8AA6] transition-colors"
-            >
-              <span className="flex items-center gap-1.5">
-                <Brain className="w-3 h-3 text-sky-400" />
-                <span>AI & FASTAPI ARCHITECTURE</span>
-              </span>
-              <ChevronDown
-                className={`w-3 h-3 transition-transform ${isModelsExpanded ? "rotate-0" : "-rotate-90"
-                  }`}
-              />
-            </button>
-
-            {isModelsExpanded && (
-              <div className="space-y-1.5 px-1">
-                {backendEngines.map((m) => (
-                  <div
-                    key={m.name}
-                    className="p-2 rounded-lg bg-[#0E0D18] border border-[#1E1C2E] hover:border-sky-500/30 transition-all text-[11px]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono-retro font-medium text-gray-200">
-                        {m.name}
-                      </span>
-                      <span
-                        className={`text-[9px] font-mono-retro px-1.5 py-0.2 rounded border ${m.color}`}
-                      >
-                        {m.status}
-                      </span>
-                    </div>
-                    <p className="text-[10px] text-[#8E8AA6] truncate mt-0.5 font-sans">
-                      {m.role}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* System & Settings Section */}
-          <div className="space-y-1 pt-1">
-            <p className="px-3 text-[10px] font-mono-retro font-semibold tracking-wider text-[#5C5873] uppercase">
-              SETTINGS & PREFERENCES
-            </p>
-            <div className="space-y-0.5">
-              <Link
-                href="/settings"
-                className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-all group ${pathname === "/settings"
-                  ? "bg-sky-950/40 text-sky-200 border border-sky-500/40 shadow-[0_0_12px_rgba(56,189,248,0.15)]"
-                  : "text-[#8E8AA6] hover:text-[#F4F3F8] hover:bg-[#161524] border border-transparent"
-                  }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Settings
-                    className={`w-4 h-4 transition-colors ${pathname === "/settings"
-                      ? "text-sky-400"
-                      : "text-[#8E8AA6] group-hover:text-sky-300"
-                      }`}
-                  />
-                  <span>Traveler Profile & Preferences</span>
-                </div>
-              </Link>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Profile & Log Out Footer */}

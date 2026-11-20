@@ -52,7 +52,7 @@ export default function SettingsPage() {
           </h1>
         </div>
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
-          Customize your profile, currency display, and verify FastAPI backend connectivity.
+          Customize your profile, currency display, and system preferences.
         </p>
       </div>
 
@@ -156,8 +156,8 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 font-mono-retro">
           <div className="p-3 rounded-xl bg-[#131122] border border-[#242138] space-y-1">
-            <span className="text-[10px] text-gray-400">FASTAPI SERVER</span>
-            <p className="font-semibold text-emerald-400">ONLINE (Port 8001)</p>
+            <span className="text-[10px] text-gray-400">FASTAPI SERVICE</span>
+            <p className="font-semibold text-emerald-400">CONNECTED</p>
             <p className="text-[10px] text-gray-500">Uvicorn + Python 3.12</p>
           </div>
 

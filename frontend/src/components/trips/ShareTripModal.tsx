@@ -1,6 +1,7 @@
 "use client";
 
 import { authStore } from "@/lib/auth/auth-store";
+import { getApiBaseUrl } from "@/lib/api-config";
 import { tripStore } from "@/lib/storage/trip-store";
 import { Trip } from "@/types/trip";
 import {
@@ -174,7 +175,7 @@ export function ShareTripModal({ isOpen, onClose, onTripCreated }: ShareTripModa
 
     // 2. Optionally sync with FastAPI backend in background
     try {
-      await fetch("http://localhost:8001/api/v1/trips", {
+      await fetch(`${getApiBaseUrl()}/api/v1/trips`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(tripData),
