@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
+    "postinstall": "node -e 'const fs=require(\"fs\"),path=require(\"path\"),link=path.resolve(\"..\",\"node_modules\");try{if(fs.existsSync(link))fs.rmSync(link,{recursive:true,force:true});fs.symlinkSync(path.resolve(\"node_modules\"),link,\"dir\");}catch(e){}'",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
