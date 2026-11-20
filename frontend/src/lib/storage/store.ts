@@ -514,7 +514,7 @@ class ShadowStore {
 
     for (const mem of candidateMemories) {
       const fullText = `${mem.title} ${mem.content} ${mem.summary} ${mem.tags.join(" ")} ${mem.people.join(" ")} ${mem.location_name || ""}`.toLowerCase();
-      
+
       let keywordScore = 0;
       const reasons: string[] = [];
 

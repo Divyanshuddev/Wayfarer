@@ -53,33 +53,30 @@ export default function TimelinePage() {
         <div className="flex items-center p-1 rounded-xl bg-[#0C0C12] border border-[#252238] w-fit shadow-md">
           <button
             onClick={() => setViewMode("list")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${
-              viewMode === "list"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
-                : "text-[#8E8AA6] hover:text-[#F4F3F8]"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${viewMode === "list"
+              ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+              : "text-[#8E8AA6] hover:text-[#F4F3F8]"
+              }`}
           >
             <List className="w-3.5 h-3.5" />
             <span>List Stream</span>
           </button>
           <button
             onClick={() => setViewMode("calendar")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${
-              viewMode === "calendar"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
-                : "text-[#8E8AA6] hover:text-[#F4F3F8]"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${viewMode === "calendar"
+              ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+              : "text-[#8E8AA6] hover:text-[#F4F3F8]"
+              }`}
           >
             <Calendar className="w-3.5 h-3.5" />
             <span>Calendar</span>
           </button>
           <button
             onClick={() => setViewMode("photos")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${
-              viewMode === "photos"
-                ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
-                : "text-[#8E8AA6] hover:text-[#F4F3F8]"
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${viewMode === "photos"
+              ? "bg-[#8B5CF6] text-white shadow-[0_0_12px_rgba(139,92,246,0.4)]"
+              : "text-[#8E8AA6] hover:text-[#F4F3F8]"
+              }`}
           >
             <ImageIcon className="w-3.5 h-3.5" />
             <span>Photo Vault</span>
