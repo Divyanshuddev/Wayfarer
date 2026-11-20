@@ -3,20 +3,24 @@
 import { TripCard } from "@/components/trips/TripCard";
 import { tripStore } from "@/lib/storage/trip-store";
 import { Trip } from "@/types/trip";
-import { Compass, FolderHeart, Globe, Hotel, Sparkles } from "lucide-react";
+import { Compass, FolderHeart, Globe, Hotel, Plus, Sparkles } from "lucide-react";
 import React, { useEffect, useState } from "react";
 
 export default function CollectionsPage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [allTrips, setAllTrips] = useState<Trip[]>([]);
 
   useEffect(() => {
     const update = () => {
-      let list = tripStore.getTrips();
+      const fullList = tripStore.getTrips();
+      setAllTrips(fullList);
+
+      let list = fullList;
       if (selectedCategory === "asia") {
-        list = list.filter((t) => t.country === "Japan" || t.country === "Indonesia");
+        list = list.filter((t) => ["Japan", "Indonesia", "Thailand", "Vietnam", "India"].includes(t.country));
       } else if (selectedCategory === "europe") {
-        list = list.filter((t) => t.country === "Italy" || t.country === "Switzerland");
+        list = list.filter((t) => ["Italy", "Switzerland", "France", "Spain", "Greece"].includes(t.country));
       } else if (selectedCategory === "budget") {
         list = list.filter((t) => t.travel_style === "Backpacking");
       } else if (selectedCategory === "luxury") {
@@ -28,12 +32,17 @@ export default function CollectionsPage() {
     return tripStore.subscribe(update);
   }, [selectedCategory]);
 
+  const asiaCount = allTrips.filter((t) => ["Japan", "Indonesia", "Thailand", "Vietnam", "India"].includes(t.country)).length;
+  const europeCount = allTrips.filter((t) => ["Italy", "Switzerland", "France", "Spain", "Greece"].includes(t.country)).length;
+  const backpackCount = allTrips.filter((t) => t.travel_style === "Backpacking").length;
+  const luxuryCount = allTrips.filter((t) => t.travel_style === "Luxury" || t.travel_style === "Couple").length;
+
   const collections = [
-    { id: "all", name: "All Destinations", count: "4 Guides", tag: "Global" },
-    { id: "asia", name: "Asian Wonders", count: "Kyoto & Bali", tag: "$25 - $140 Hotels" },
-    { id: "europe", name: "European Escapes", count: "Amalfi & Zermatt", tag: "$130 - $350 Hotels" },
-    { id: "budget", name: "Backpacker Havens", count: "Low-cost villas", tag: "Under $50/night" },
-    { id: "luxury", name: "Luxury & Honeymoon", count: "Cliffside suites", tag: "Scenic Balconies" },
+    { id: "all", name: "All Destinations", count: `${allTrips.length} Guides`, tag: "Global" },
+    { id: "asia", name: "Asian Wonders", count: `${asiaCount} Guides`, tag: "Asia Pacific" },
+    { id: "europe", name: "European Escapes", count: `${europeCount} Guides`, tag: "Europe" },
+    { id: "budget", name: "Backpacker Havens", count: `${backpackCount} Guides`, tag: "Budget" },
+    { id: "luxury", name: "Luxury & Escapes", count: `${luxuryCount} Guides`, tag: "Premium" },
   ];
 
   return (
@@ -78,11 +87,28 @@ export default function CollectionsPage() {
           <span>Showing {trips.length} curated trip guides</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {trips.map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
-          ))}
-        </div>
+        {trips.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {trips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} />
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center rounded-2xl bg-[#0c0b14]/70 border border-[#222036] space-y-3">
+            <FolderHeart className="w-10 h-10 text-gray-500 mx-auto" />
+            <h3 className="text-sm font-semibold text-gray-200">No Trips in This Collection Yet</h3>
+            <p className="text-xs text-gray-400 max-w-sm mx-auto">
+              Be the first traveler to post a trip in this collection!
+            </p>
+            <button
+              onClick={() => window.dispatchEvent(new CustomEvent("open-share-trip"))}
+              className="px-4 py-2 rounded-xl text-xs font-medium text-white bg-sky-600 hover:bg-sky-500 transition-all inline-flex items-center gap-1.5"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Share Trip</span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

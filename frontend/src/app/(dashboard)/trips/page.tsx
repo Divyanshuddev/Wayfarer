@@ -40,7 +40,10 @@ function TripsCatalogContent() {
   }, [selectedDestination, selectedStyle, searchQuery, sortBy]);
 
   const travelStyles = ["all", "Solo", "Couple", "Backpacking", "Luxury", "Family", "Friends"];
-  const uniqueDestinations = ["all", "Kyoto", "Bali", "Amalfi Coast", "Zermatt"];
+  const uniqueDestinations = [
+    "all",
+    ...Array.from(new Set(trips.map((t) => t.destination).filter(Boolean))),
+  ];
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
@@ -109,11 +112,10 @@ function TripsCatalogContent() {
             <button
               key={style}
               onClick={() => setSelectedStyle(style)}
-              className={`px-3 py-1 rounded-full text-xs font-mono-retro transition-all ${
-                selectedStyle === style
-                  ? "bg-sky-500 text-white font-medium shadow-[0_0_10px_rgba(56,189,248,0.3)]"
-                  : "bg-[#141224] text-gray-400 border border-[#252238] hover:text-white"
-              }`}
+              className={`px-3 py-1 rounded-full text-xs font-mono-retro transition-all ${selectedStyle === style
+                ? "bg-sky-500 text-white font-medium shadow-[0_0_10px_rgba(56,189,248,0.3)]"
+                : "bg-[#141224] text-gray-400 border border-[#252238] hover:text-white"
+                }`}
             >
               {style === "all" ? "All Styles" : style}
             </button>
@@ -126,11 +128,10 @@ function TripsCatalogContent() {
               <button
                 key={d}
                 onClick={() => setSelectedDestination(d)}
-                className={`px-2 py-0.5 rounded-lg border transition-all ${
-                  selectedDestination === d
-                    ? "bg-emerald-950/80 text-emerald-300 border-emerald-600/50"
-                    : "bg-[#12111d] text-gray-400 border-[#222036] hover:text-gray-200"
-                }`}
+                className={`px-2 py-0.5 rounded-lg border transition-all ${selectedDestination === d
+                  ? "bg-emerald-950/80 text-emerald-300 border-emerald-600/50"
+                  : "bg-[#12111d] text-gray-400 border-[#222036] hover:text-gray-200"
+                  }`}
               >
                 {d === "all" ? "Everywhere" : d}
               </button>

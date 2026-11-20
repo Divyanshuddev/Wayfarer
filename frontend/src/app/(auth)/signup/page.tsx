@@ -1,7 +1,8 @@
 "use client";
 
+import { authStore } from "@/lib/auth/auth-store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { ArrowRight, Compass, Eye, EyeOff, Lock, Mail, ShieldCheck, User } from "lucide-react";
+import { Compass, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -20,15 +21,16 @@ export default function SignupPage() {
     setIsLoading(true);
     setErrorMessage("");
 
+    // 1. Supabase Auth if configured
     if (isSupabaseConfigured()) {
       try {
         const supabase = createClient();
         const { error } = await supabase.auth.signUp({
-          email,
-          password,
+          email: email.trim(),
+          password: password.trim(),
           options: {
             data: {
-              full_name: fullName,
+              full_name: fullName.trim(),
             },
           },
         });
@@ -37,11 +39,27 @@ export default function SignupPage() {
           setIsLoading(false);
           return;
         }
-      } catch (err) {
-        console.warn("Supabase signup failed:", err);
+        router.push("/");
+        return;
+      } catch (err: any) {
+        console.warn("Supabase signup check:", err);
       }
     }
 
+    // 2. Real local registration
+    const result = authStore.signUp({
+      full_name: fullName,
+      email,
+      password,
+    });
+
+    if (!result.success) {
+      setErrorMessage(result.error || "Failed to create account.");
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(false);
     router.push("/");
   };
 
@@ -59,12 +77,12 @@ export default function SignupPage() {
             JOIN WAYFARER
           </h1>
           <p className="text-xs text-gray-400">
-            Share authentic trips, real hotel prices, and unfiltered advice.
+            Create your traveler account to share trips and get real hotel intel.
           </p>
         </div>
 
         {errorMessage && (
-          <div className="p-3 rounded-xl bg-rose-950/50 border border-rose-800/50 text-xs text-rose-300 font-mono-retro">
+          <div className="p-3.5 rounded-xl bg-rose-950/60 border border-rose-800/60 text-xs text-rose-300 font-mono-retro animate-in fade-in duration-150">
             {errorMessage}
           </div>
         )}
@@ -79,7 +97,7 @@ export default function SignupPage() {
               <input
                 type="text"
                 required
-                placeholder="Aria Montgomery"
+                placeholder="e.g. Aria Montgomery"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full bg-[#131122] border border-[#25223c] focus:border-sky-500 rounded-xl pl-9 pr-3 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none transition-all"
@@ -96,7 +114,7 @@ export default function SignupPage() {
               <input
                 type="email"
                 required
-                placeholder="traveler@wayfarer.com"
+                placeholder="you@domain.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full bg-[#131122] border border-[#25223c] focus:border-sky-500 rounded-xl pl-9 pr-3 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none transition-all"
@@ -106,14 +124,14 @@ export default function SignupPage() {
 
           <div>
             <label className="block text-gray-300 font-mono-retro mb-1.5 text-[11px]">
-              Password
+              Password (Min. 6 characters)
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type={showPassword ? "text" : "password"}
                 required
-                placeholder="Minimum 8 characters"
+                placeholder="Choose a secure password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-[#131122] border border-[#25223c] focus:border-sky-500 rounded-xl pl-9 pr-9 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none transition-all"
@@ -130,14 +148,14 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
-            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-medium text-xs shadow-[0_0_20px_rgba(56,189,248,0.3)] transition-all active:scale-[0.98]"
+            disabled={isLoading || !fullName.trim() || !email.trim() || password.length < 6}
+            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-medium text-xs shadow-[0_0_20px_rgba(56,189,248,0.3)] transition-all active:scale-[0.98] disabled:opacity-50"
           >
-            {isLoading ? "Creating Account..." : "Create Free Traveler Account"}
+            {isLoading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
-        <div className="text-center pt-2 text-xs text-gray-400 font-mono-retro">
+        <div className="text-center pt-2 text-xs text-gray-400 font-mono-retro border-t border-[#1a182c]">
           <span>Already have an account? </span>
           <Link href="/login" className="text-sky-400 hover:text-sky-300 font-medium hover:underline">
             Sign In →

@@ -166,11 +166,10 @@ export function MemoryDetailView({ memoryId }: MemoryDetailViewProps) {
           <button
             onClick={() => shadowStore.togglePin(memory.id)}
             title={memory.is_pinned ? "Unpin" : "Pin"}
-            className={`p-2 rounded-lg border transition-colors ${
-              memory.is_pinned
-                ? "bg-purple-950/80 text-[#C084FC] border-purple-500/50"
-                : "bg-[#12121B] text-[#8E8AA6] border-[#252238] hover:text-[#F4F3F8]"
-            }`}
+            className={`p-2 rounded-lg border transition-colors ${memory.is_pinned
+              ? "bg-purple-950/80 text-[#C084FC] border-purple-500/50"
+              : "bg-[#12121B] text-[#8E8AA6] border-[#252238] hover:text-[#F4F3F8]"
+              }`}
           >
             <Pin className={`w-4 h-4 ${memory.is_pinned ? "fill-[#C084FC]" : ""}`} />
           </button>
@@ -179,11 +178,10 @@ export function MemoryDetailView({ memoryId }: MemoryDetailViewProps) {
           <button
             onClick={() => shadowStore.toggleFavorite(memory.id)}
             title={memory.is_favorite ? "Unfavorite" : "Favorite"}
-            className={`p-2 rounded-lg border transition-colors ${
-              memory.is_favorite
-                ? "bg-rose-950/80 text-rose-300 border-rose-500/50"
-                : "bg-[#12121B] text-[#8E8AA6] border-[#252238] hover:text-[#F4F3F8]"
-            }`}
+            className={`p-2 rounded-lg border transition-colors ${memory.is_favorite
+              ? "bg-rose-950/80 text-rose-300 border-rose-500/50"
+              : "bg-[#12121B] text-[#8E8AA6] border-[#252238] hover:text-[#F4F3F8]"
+              }`}
           >
             <Heart className={`w-4 h-4 ${memory.is_favorite ? "fill-rose-400" : ""}`} />
           </button>

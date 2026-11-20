@@ -1,5 +1,6 @@
 "use client";
 
+import { authStore } from "@/lib/auth/auth-store";
 import { tripStore } from "@/lib/storage/trip-store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
@@ -37,6 +38,7 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
   const router = useRouter();
   const [tripCount, setTripCount] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
+  const [currentUser, setCurrentUser] = useState(() => authStore.getCurrentUser());
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isModelsExpanded, setIsModelsExpanded] = useState(true);
 
@@ -44,12 +46,19 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
     const update = () => {
       setTripCount(tripStore.getTrips().length);
       setQuestionCount(tripStore.getQuestions().length);
+      setCurrentUser(authStore.getCurrentUser());
     };
     update();
-    return tripStore.subscribe(update);
+    const unsubTrips = tripStore.subscribe(update);
+    const unsubAuth = authStore.subscribe(update);
+    return () => {
+      unsubTrips();
+      unsubAuth();
+    };
   }, []);
 
   const handleLogout = async () => {
+    authStore.signOut();
     if (isSupabaseConfigured()) {
       try {
         const supabase = createClient();
@@ -298,18 +307,18 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
           {/* User Profile Info Card */}
           <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-[#12111D] border border-[#201e30]">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-600 to-indigo-600 border border-sky-400/40 flex items-center justify-center font-mono-retro text-[11px] font-semibold text-white flex-shrink-0">
-              WT
+              {currentUser?.full_name ? currentUser.full_name.slice(0, 2).toUpperCase() : "WT"}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-gray-200 truncate">
-                Wayfarer Traveler
+                {currentUser?.full_name || "Wayfarer Traveler"}
               </p>
-              <p className="text-[10px] text-emerald-400 font-mono-retro truncate">
-                4 Visited • 2 Answers
+              <p className="text-[10px] text-gray-400 font-mono-retro truncate">
+                {currentUser?.email || "Authenticated"}
               </p>
             </div>
             <span className="text-[9px] font-mono-retro text-sky-400 bg-sky-950/80 px-1.5 py-0.5 rounded border border-sky-800/40">
-              EXPLORER
+              MEMBER
             </span>
           </div>
 

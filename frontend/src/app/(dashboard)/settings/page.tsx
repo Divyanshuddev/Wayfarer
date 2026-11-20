@@ -1,5 +1,6 @@
 "use client";
 
+import { authStore } from "@/lib/auth/auth-store";
 import { tripStore } from "@/lib/storage/trip-store";
 import {
   Compass,
@@ -15,15 +16,24 @@ import {
   ShieldCheck,
   User,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 export default function SettingsPage() {
-  const [travelerName, setTravelerName] = useState("Wayfarer Explorer");
-  const [homeBase, setHomeBase] = useState("San Francisco, CA");
-  const [visitedCount, setVisitedCount] = useState(14);
+  const [currentUser, setCurrentUser] = useState(() => authStore.getCurrentUser());
+  const [travelerName, setTravelerName] = useState(currentUser?.full_name || "");
+  const [homeBase, setHomeBase] = useState("");
+  const [visitedCount, setVisitedCount] = useState(0);
   const [currency, setCurrency] = useState("USD ($)");
-  const [travelStyle, setTravelStyle] = useState("Backpacking & Boutique");
+  const [travelStyle, setTravelStyle] = useState("Solo & Backpacking");
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    const user = authStore.getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+      setTravelerName(user.full_name);
+    }
+  }, []);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +52,7 @@ export default function SettingsPage() {
           </h1>
         </div>
         <p className="text-xs sm:text-sm text-gray-400 mt-1">
-          Customize your community presence, currency display, and verify FastAPI backend connectivity.
+          Customize your profile, currency display, and verify FastAPI backend connectivity.
         </p>
       </div>
 
@@ -58,6 +68,8 @@ export default function SettingsPage() {
             <label className="block font-medium text-gray-300 mb-1.5">Display Name</label>
             <input
               type="text"
+              required
+              placeholder="e.g. Aria Montgomery"
               value={travelerName}
               onChange={(e) => setTravelerName(e.target.value)}
               className="w-full bg-[#141224] border border-[#26233d] focus:border-sky-500 rounded-xl px-3 py-2 text-gray-200"
@@ -68,6 +80,7 @@ export default function SettingsPage() {
             <label className="block font-medium text-gray-300 mb-1.5">Home Base City</label>
             <input
               type="text"
+              placeholder="e.g. San Francisco, Tokyo, London"
               value={homeBase}
               onChange={(e) => setHomeBase(e.target.value)}
               className="w-full bg-[#141224] border border-[#26233d] focus:border-sky-500 rounded-xl px-3 py-2 text-gray-200"
@@ -106,6 +119,7 @@ export default function SettingsPage() {
           <label className="block font-medium text-gray-300 mb-1.5">Primary Travel Style</label>
           <input
             type="text"
+            placeholder="e.g. Backpacking, Luxury & Boutique, Solo Explorer"
             value={travelStyle}
             onChange={(e) => setTravelStyle(e.target.value)}
             className="w-full bg-[#141224] border border-[#26233d] focus:border-sky-500 rounded-xl px-3 py-2 text-gray-200"
@@ -119,7 +133,7 @@ export default function SettingsPage() {
             </span>
           ) : (
             <span className="text-gray-500 text-[11px] font-mono-retro">
-              Changes reflect immediately across trips and hotel answers
+              Changes reflect across your shared trips and hotel answers
             </span>
           )}
 

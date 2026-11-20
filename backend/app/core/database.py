@@ -288,8 +288,8 @@ SAMPLE_QUESTIONS: List[QuestionWithAnswersResponse] = [
 
 class TripRepository:
     def __init__(self):
-        self.trips: Dict[str, TripResponse] = {t.id: t for t in SAMPLE_TRIPS}
-        self.questions: Dict[str, QuestionWithAnswersResponse] = {q.id: q for q in SAMPLE_QUESTIONS}
+        self.trips: Dict[str, TripResponse] = {}
+        self.questions: Dict[str, QuestionWithAnswersResponse] = {}
 
     def get_all_trips(self, destination: Optional[str] = None, style: Optional[str] = None, query: Optional[str] = None) -> List[TripResponse]:
         results = list(self.trips.values())

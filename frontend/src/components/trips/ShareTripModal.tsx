@@ -1,7 +1,8 @@
 "use client";
 
-import { Trip } from "@/types/trip";
+import { authStore } from "@/lib/auth/auth-store";
 import { tripStore } from "@/lib/storage/trip-store";
+import { Trip } from "@/types/trip";
 import {
   Camera,
   CheckCircle2,
@@ -29,46 +30,31 @@ export function ShareTripModal({ isOpen, onClose, onTripCreated }: ShareTripModa
   const [title, setTitle] = useState("");
   const [travelDates, setTravelDates] = useState("");
   const [durationDays, setDurationDays] = useState(5);
-  const [travelStyle, setTravelStyle] = useState<Trip["travel_style"]>("Couple");
-  const [budgetTotal, setBudgetTotal] = useState("$1,200");
-  const [hotelPriceRange, setHotelPriceRange] = useState("$80 - $140 / night");
+  const [travelStyle, setTravelStyle] = useState<Trip["travel_style"]>("Solo");
+  const [budgetTotal, setBudgetTotal] = useState("");
+  const [hotelPriceRange, setHotelPriceRange] = useState("");
   const [summary, setSummary] = useState("");
   const [itinerary, setItinerary] = useState("");
   const [bestTimeToVisit, setBestTimeToVisit] = useState("");
-  const [coverImage, setCoverImage] = useState(
-    "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&auto=format&fit=crop&q=80"
-  );
+  const [coverImage, setCoverImage] = useState("");
 
-  // Dynamic Pros & Cons Lists
-  const [pros, setPros] = useState<string[]>([
-    "Super clean, safe streets and polite locals",
-    "Astonishing street food and world-class coffee cafes",
-  ]);
+  // Dynamic Pros & Cons Lists - clean blank state
+  const [pros, setPros] = useState<string[]>([]);
   const [newPro, setNewPro] = useState("");
 
-  const [cons, setCons] = useState<string[]>([
-    "Heavy afternoon traffic; rent a scooter or walk instead of taxis",
-    "Peak tourist spots book out weeks ahead",
-  ]);
+  const [cons, setCons] = useState<string[]>([]);
   const [newCon, setNewCon] = useState("");
 
   // Hotel recommendations
-  const [hotels, setHotels] = useState<string[]>([
-    "Sakura Boutique Hotel ($85/night - central location, free breakfast)",
-  ]);
+  const [hotels, setHotels] = useState<string[]>([]);
   const [newHotel, setNewHotel] = useState("");
 
   // Food recommendations
-  const [foods, setFoods] = useState<string[]>([
-    "Local noodle bar in the alley behind main station ($6/bowl)",
-  ]);
+  const [foods, setFoods] = useState<string[]>([]);
   const [newFood, setNewFood] = useState("");
 
-  // Sample quick images
-  const [imageUrls, setImageUrls] = useState<string[]>([
-    "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&auto=format&fit=crop&q=80",
-    "https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=800&auto=format&fit=crop&q=80",
-  ]);
+  // Photo URLs
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,10 +118,13 @@ export function ShareTripModal({ isOpen, onClose, onTripCreated }: ShareTripModa
 
     setIsSubmitting(true);
 
+    const currentUser = authStore.getCurrentUser();
     const tripData = {
-      user_id: "usr-current-traveler",
-      author_name: "You (Verified Traveler)",
-      author_avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+      user_id: currentUser?.id || "usr-current-traveler",
+      author_name: currentUser?.full_name || "Verified Traveler",
+      author_avatar:
+        currentUser?.avatar_url ||
+        "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
       title: title.trim(),
       destination: destination.trim(),
       country: country.trim() || "Global",
@@ -143,12 +132,12 @@ export function ShareTripModal({ isOpen, onClose, onTripCreated }: ShareTripModa
       duration_days: Number(durationDays) || 5,
       travel_style: travelStyle,
       budget_total: budgetTotal.trim() || "$1,000",
-      hotel_price_range: hotelPriceRange.trim() || "$70 - $130 / night",
+      hotel_price_range: hotelPriceRange.trim() || "$80 - $140 / night",
       summary: summary.trim() || `Trip to ${destination} with firsthand recommendations and pros/cons.`,
       itinerary: itinerary.trim() || "Day-by-day exploration of highlights.",
-      pros: pros.length > 0 ? pros : ["Safe, welcoming atmosphere with rich culture"],
+      pros: pros.length > 0 ? pros : ["Welcoming locals, memorable scenery, and great culture"],
       cons: cons.length > 0 ? cons : ["Book accommodations in advance during peak season"],
-      best_time_to_visit: bestTimeToVisit.trim() || "Spring or Autumn for pleasant weather",
+      best_time_to_visit: bestTimeToVisit.trim() || "Spring or Autumn for best weather",
       local_food_recommendations: foods,
       hotel_recommendations: hotels,
       images: imageUrls.map((url, idx) => ({
@@ -157,7 +146,10 @@ export function ShareTripModal({ isOpen, onClose, onTripCreated }: ShareTripModa
         caption: `${destination} highlight`,
         place_type: (idx === 0 ? "hotel" : "spot") as any,
       })),
-      cover_image: coverImage.trim() || imageUrls[0] || "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&auto=format&fit=crop&q=80",
+      cover_image:
+        coverImage.trim() ||
+        imageUrls[0] ||
+        "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&auto=format&fit=crop&q=80",
     };
 
     // 1. Add to local trip store for instant reactivity
