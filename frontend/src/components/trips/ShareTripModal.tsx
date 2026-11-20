@@ -57,6 +57,23 @@ export function ShareTripModal({ isOpen, onClose, onTripCreated }: ShareTripModa
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState("");
 
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    Array.from(files).forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        if (result) {
+          setImageUrls((prev) => [...prev, result]);
+          setCoverImage((prev) => prev || result);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isOpen) return null;
@@ -517,10 +534,29 @@ export function ShareTripModal({ isOpen, onClose, onTripCreated }: ShareTripModa
               />
             </div>
 
+            {/* Multi-Image File Upload */}
+            <div>
+              <label className="block font-medium text-gray-300 mb-1 flex items-center gap-1.5">
+                <Upload className="w-3.5 h-3.5 text-sky-400" />
+                Upload Multiple Photos from Device
+              </label>
+              <label className="flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-sky-500/40 hover:border-sky-400 bg-sky-950/20 hover:bg-sky-950/40 text-sky-300 cursor-pointer transition-all">
+                <Upload className="w-4 h-4 text-sky-400" />
+                <span className="font-medium text-xs">Click to select multiple photos (JPG, PNG, WebP)</span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
             {/* Gallery previews */}
             <div>
               <label className="block font-medium text-gray-300 mb-1">
-                Additional Photo URLs ({imageUrls.length} added)
+                Or Paste Image URLs ({imageUrls.length} added)
               </label>
               <div className="flex gap-2 mb-2">
                 <input
