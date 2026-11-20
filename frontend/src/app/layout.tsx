@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Shadow – Your Digital Memory",
-  description: "Your life, remembered. AI-powered personal memory assistant.",
+  title: "Wayfarer – Real Trips & Hotel Price Intel",
+  description: "Share trips, unfiltered pros & cons, hotel prices, and community traveler advice.",
 };
 
 export default function RootLayout({
@@ -12,8 +12,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark h-full antialiased">
-      <body className="min-h-full bg-[#08080c] text-[#ececf1] selection:bg-purple-600 selection:text-white">
+    <html lang="en" className="dark h-full antialiased" suppressHydrationWarning>
+      <body
+        className="min-h-full bg-[#08080c] text-[#ececf1] selection:bg-sky-500 selection:text-white"
+        suppressHydrationWarning
+      >
         {children}
       </body>
     </html>

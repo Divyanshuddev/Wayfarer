@@ -19,8 +19,8 @@ import {
 import React, { useEffect, useState } from "react";
 
 export default function SettingsPage() {
-  const [currentUser, setCurrentUser] = useState(() => authStore.getCurrentUser());
-  const [travelerName, setTravelerName] = useState(currentUser?.full_name || "");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [travelerName, setTravelerName] = useState("");
   const [homeBase, setHomeBase] = useState("");
   const [visitedCount, setVisitedCount] = useState(0);
   const [currency, setCurrency] = useState("USD ($)");

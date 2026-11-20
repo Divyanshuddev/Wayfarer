@@ -38,7 +38,7 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
   const router = useRouter();
   const [tripCount, setTripCount] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
-  const [currentUser, setCurrentUser] = useState(() => authStore.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [isModelsExpanded, setIsModelsExpanded] = useState(true);
 
