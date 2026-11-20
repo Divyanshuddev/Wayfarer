@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Bell,
-  Calendar,
-  History,
-  LayoutDashboard,
-  Plus,
-  Search,
-  Settings,
-} from "lucide-react";
+import { Compass, Globe, MessageSquare, Plus, Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import React from "react";
@@ -21,9 +13,9 @@ export function MobileBottomNav({ onOpenQuickAdd }: MobileBottomNavProps) {
   const pathname = usePathname();
 
   const links = [
-    { href: "/", label: "Home", icon: LayoutDashboard },
-    { href: "/memories", label: "Archive", icon: History },
-    { href: "/search", label: "AI Search", icon: Search },
+    { href: "/", label: "Explore", icon: Compass },
+    { href: "/trips", label: "Trips", icon: Globe },
+    { href: "/qa", label: "Q&A", icon: MessageSquare },
     { href: "/settings", label: "Settings", icon: Settings },
   ];
 
@@ -36,9 +28,8 @@ export function MobileBottomNav({ onOpenQuickAdd }: MobileBottomNavProps) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-col items-center py-1 px-3 text-[10px] font-medium transition-colors ${
-              isActive ? "text-purple-400 font-semibold" : "text-[#8E8AA6] hover:text-gray-200"
-            }`}
+            className={`flex flex-col items-center py-1 px-3 text-[10px] font-medium transition-colors ${isActive ? "text-sky-400 font-semibold" : "text-[#8E8AA6] hover:text-gray-200"
+              }`}
           >
             <Icon className="w-5 h-5 mb-0.5" />
             <span>{item.label}</span>
@@ -46,11 +37,11 @@ export function MobileBottomNav({ onOpenQuickAdd }: MobileBottomNavProps) {
         );
       })}
 
-      {/* Floating Center Quick Add Button */}
+      {/* Floating Center Share Trip Button */}
       <button
         onClick={onOpenQuickAdd}
-        aria-label="Capture new memory"
-        className="-mt-5 w-12 h-12 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-[0_0_15px_rgba(168,85,247,0.5)] border-2 border-purple-400/50 active:scale-95 transition-transform"
+        aria-label="Share new trip"
+        className="-mt-5 w-12 h-12 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white shadow-[0_0_18px_rgba(56,189,248,0.5)] border-2 border-sky-400/50 active:scale-95 transition-transform"
       >
         <Plus className="w-6 h-6" />
       </button>
@@ -62,9 +53,8 @@ export function MobileBottomNav({ onOpenQuickAdd }: MobileBottomNavProps) {
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-col items-center py-1 px-3 text-[10px] font-medium transition-colors ${
-              isActive ? "text-purple-400 font-semibold" : "text-[#8E8AA6] hover:text-gray-200"
-            }`}
+            className={`flex flex-col items-center py-1 px-3 text-[10px] font-medium transition-colors ${isActive ? "text-sky-400 font-semibold" : "text-[#8E8AA6] hover:text-gray-200"
+              }`}
           >
             <Icon className="w-5 h-5 mb-0.5" />
             <span>{item.label}</span>

@@ -4,7 +4,7 @@ import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { RetroGridBackground } from "@/components/layout/RetroGridBackground";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
-import { QuickAddModal } from "@/components/memories/QuickAddModal";
+import { ShareTripModal } from "@/components/trips/ShareTripModal";
 import React, { Suspense, useEffect, useState } from "react";
 
 export default function DashboardLayout({
@@ -12,22 +12,22 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
-  // Global ⌘K / Ctrl+K keyboard shortcut and custom event to open Quick Add
+  // Global ⌘K / Ctrl+K keyboard shortcut and custom event to open Share Trip modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
-        setIsQuickAddOpen((prev) => !prev);
+        setIsShareModalOpen((prev) => !prev);
       }
     };
-    const handleOpenCustom = () => setIsQuickAddOpen(true);
+    const handleOpenCustom = () => setIsShareModalOpen(true);
     window.addEventListener("keydown", handleKeyDown);
-    window.addEventListener("open-quick-add", handleOpenCustom);
+    window.addEventListener("open-share-trip", handleOpenCustom);
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      window.removeEventListener("open-quick-add", handleOpenCustom);
+      window.removeEventListener("open-share-trip", handleOpenCustom);
     };
   }, []);
 
@@ -37,17 +37,17 @@ export default function DashboardLayout({
 
       {/* Desktop Sidebar wrapped in Suspense */}
       <Suspense fallback={<div className="w-64 hidden md:block bg-[#0c0b14]/90 border-r border-[#222034]" />}>
-        <Sidebar onOpenQuickAdd={() => setIsQuickAddOpen(true)} />
+        <Sidebar onOpenQuickAdd={() => setIsShareModalOpen(true)} />
       </Suspense>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 z-10 pb-16 md:pb-6">
-        <Suspense fallback={<div className="h-14 border-b border-[#1f1d2e] bg-[#08080c]" />}>
-          <TopHeader onOpenQuickAdd={() => setIsQuickAddOpen(true)} />
+        <Suspense fallback={<div className="h-14 border-b border-[#201d32] bg-[#08080c]" />}>
+          <TopHeader onOpenQuickAdd={() => setIsShareModalOpen(true)} />
         </Suspense>
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
-          <Suspense fallback={<div className="p-8 text-center text-xs font-mono-retro text-gray-400">Loading view...</div>}>
+          <Suspense fallback={<div className="p-8 text-center text-xs font-mono-retro text-gray-400">Loading travel intel...</div>}>
             {children}
           </Suspense>
         </main>
@@ -55,13 +55,13 @@ export default function DashboardLayout({
 
       {/* Mobile Navigation wrapped in Suspense */}
       <Suspense fallback={null}>
-        <MobileBottomNav onOpenQuickAdd={() => setIsQuickAddOpen(true)} />
+        <MobileBottomNav onOpenQuickAdd={() => setIsShareModalOpen(true)} />
       </Suspense>
 
-      {/* Quick Add Modal */}
-      <QuickAddModal
-        isOpen={isQuickAddOpen}
-        onClose={() => setIsQuickAddOpen(false)}
+      {/* Share Trip Modal */}
+      <ShareTripModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
       />
     </div>
   );

@@ -1,65 +1,39 @@
-from datetime import datetime, timedelta
-import random
-from fastapi import APIRouter, Depends
-from app.core.database import db_store
-from app.core.security import AuthUser, get_current_user
+from fastapi import APIRouter
+from app.core.database import trip_db
 
 router = APIRouter()
 
 
 @router.get("")
-async def get_dashboard(current_user: AuthUser = Depends(get_current_user)):
-    memories = db_store.get_all_memories(current_user.id)
-    reminders = db_store.get_reminders(current_user.id)
-    collections = db_store.get_collections(current_user.id)
+async def get_travel_dashboard():
+    """Aggregated travel stats, trending destinations, and active traveler discussions."""
+    trips = trip_db.get_all_trips()
+    questions = trip_db.get_questions()
 
-    total = len(memories)
-    pinned = sum(1 for m in memories if m.is_pinned)
-    with_attachments = sum(1 for m in memories if m.attachments)
+    destinations = {}
+    for t in trips:
+        if t.destination not in destinations:
+            destinations[t.destination] = {
+                "destination": t.destination,
+                "country": t.country,
+                "trips_count": 0,
+                "hotel_price_range": t.hotel_price_range,
+                "cover_image": t.cover_image,
+                "avg_budget": t.budget_total,
+            }
+        destinations[t.destination]["trips_count"] += 1
 
-    category_counts = {}
-    type_counts = {}
-    for m in memories:
-        category_counts[m.category] = category_counts.get(m.category, 0) + 1
-        type_counts[m.memory_type.value] = type_counts.get(m.memory_type.value, 0) + 1
-
-    # 14-day activity chart series
-    today = datetime.utcnow().date()
-    activity_14_days = []
-    for i in range(13, -1, -1):
-        d = today - timedelta(days=i)
-        date_str = d.strftime("%b %d")
-        count = sum(1 for m in memories if m.memory_date.date() == d)
-        activity_14_days.append({"date": date_str, "memories": count})
-
-    # Rediscover highlight ("On this day" / daily reflection)
-    rediscover = None
-    if memories:
-        pool = [m for m in memories if m.is_pinned or len(m.connections) > 0] or memories
-        mem = random.choice(pool)
-        prompts = [
-            "How has your perspective on this moment evolved since you captured it?",
-            "Does this insight still hold true for you today, or has experience reshaped it?",
-            "What was the quietest feeling in the room when this happened?",
-            "If you could revisit this conversation or place today, what would you notice first?",
-        ]
-        rediscover = {
-            "memory": mem,
-            "reflection_prompt": random.choice(prompts)
-        }
+    total_answers = sum(len(q.answers) for q in questions)
 
     return {
         "stats": {
-            "total_memories": total,
-            "pinned": pinned,
-            "with_attachments": with_attachments,
-            "grounding_score": 100,
-            "category_counts": category_counts,
-            "type_counts": type_counts,
-            "activity_14_days": activity_14_days,
+            "total_trips": len(trips),
+            "total_destinations": len(destinations),
+            "total_questions": len(questions),
+            "total_answers": total_answers,
+            "community_rating": "4.9 / 5.0",
         },
-        "rediscover": rediscover,
-        "recent_memories": memories[:4],
-        "upcoming_reminders": reminders[:4],
-        "recent_collections": collections[:3],
+        "trending_destinations": list(destinations.values())[:6],
+        "featured_trips": trips[:4],
+        "recent_questions": questions[:4],
     }

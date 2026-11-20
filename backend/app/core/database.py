@@ -1,573 +1,416 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 import uuid
+
 try:
-    from app.core.config import settings
-    from app.schemas.collections_reminders import (
-        CollectionResponse,
-        ReminderResponse,
-        ReminderType,
-        RecurrenceRule,
-        UserProfile,
-    )
-    from app.schemas.memory import (
-        ExtractedEntities,
-        MemoryAttachment,
-        MemoryCategory,
-        MemoryConnection,
-        MemoryCreate,
-        MemoryResponse,
-        MemoryType,
-        PrivacyLevel,
-    )
-    from app.services.embedding_service import discover_memory_links
+    from app.schemas.trip import TripCreate, TripImage, TripResponse
+    from app.schemas.qa import AnswerCreate, AnswerResponse, QuestionCreate, QuestionWithAnswersResponse
 except ImportError:
-    from backend.app.core.config import settings
-    from backend.app.schemas.collections_reminders import (
-        CollectionResponse,
-        ReminderResponse,
-        ReminderType,
-        RecurrenceRule,
-        UserProfile,
-    )
-    from backend.app.schemas.memory import (
-        ExtractedEntities,
-        MemoryAttachment,
-        MemoryCategory,
-        MemoryConnection,
-        MemoryCreate,
-        MemoryResponse,
-        MemoryType,
-        PrivacyLevel,
-    )
-    from backend.app.services.embedding_service import discover_memory_links
+    from backend.app.schemas.trip import TripCreate, TripImage, TripResponse
+    from backend.app.schemas.qa import AnswerCreate, AnswerResponse, QuestionCreate, QuestionWithAnswersResponse
 
-# Initial seed profile
-INITIAL_PROFILE = UserProfile(
-    id="usr_00000000-0000-0000-0000-000000000001",
-    full_name="Kaelen Vance",
-    avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-    theme="dark",
-    ai_auto_organize=True,
-    ai_auto_link=True,
-    default_privacy="private",
-    created_at=datetime(2024, 1, 1),
-)
 
-# Initial seed collections
-INITIAL_COLLECTIONS = [
-    CollectionResponse(
-        id="col-1",
-        user_id=INITIAL_PROFILE.id,
-        name="Travel & Wandering",
-        description="Footsteps in distant cities, smells of morning rain, train tickets and vistas.",
-        icon="compass",
-        accent_shade="#A855F7",
-        memory_count=3,
-        last_viewed_at=datetime(2024, 11, 20, 10, 0),
-        created_at=datetime(2024, 2, 10, 10, 0),
-    ),
-    CollectionResponse(
-        id="col-2",
-        user_id=INITIAL_PROFILE.id,
-        name="Architectural Epiphanies",
-        description="Breakthrough ideas on systems architecture, AI agency, and memory persistence.",
-        icon="cpu",
-        accent_shade="#8B5CF6",
-        memory_count=2,
-        last_viewed_at=datetime(2024, 11, 19, 14, 20),
-        created_at=datetime(2024, 3, 1, 9, 30),
-    ),
-    CollectionResponse(
-        id="col-3",
-        user_id=INITIAL_PROFILE.id,
-        name="Conversations with Maya",
-        description="Dialogue on philosophy, design aesthetics, and late-night espresso debriefs.",
-        icon="message-circle",
-        accent_shade="#EC4899",
-        memory_count=2,
-        last_viewed_at=datetime(2024, 11, 18, 11, 0),
-        created_at=datetime(2024, 4, 12, 16, 0),
-    ),
-    CollectionResponse(
-        id="col-4",
-        user_id=INITIAL_PROFILE.id,
-        name="Deep Reading Notes",
-        description="Quotes, marginalia, and critical reflections from books read this year.",
-        icon="book-open",
-        accent_shade="#3B82F6",
-        memory_count=2,
-        last_viewed_at=datetime(2024, 11, 15, 18, 0),
-        created_at=datetime(2024, 1, 20, 12, 0),
-    ),
-]
-
-# Initial seed memories
-INITIAL_MEMORIES = [
-    MemoryResponse(
-        id="mem-001",
-        user_id=INITIAL_PROFILE.id,
-        title="Kyoto Twilight & The Hidden Moss Garden",
-        description="""Spent three quiet hours at Giou-ji temple just north of Arashiyama. The afternoon rain had just stopped, leaving beads of crystal water clinging to the velvet emerald moss carpet. 
-
-Sat on the engawa veranda listening to water drops echoing in the bamboo grove behind the thatched hall. Spoke with an elderly gardener who shared that the garden has over 120 varieties of moss, some cultivated uninterrupted since the Heian period.
-
-Key insight: True mastery requires cultivating stillness before arranging stones. The silence here wasn't empty; it was dense with memory.""",
-        ai_summary="Reflective afternoon at Giou-ji temple in Kyoto observing rain on 120 moss varieties with thoughts on Heian tranquility.",
-        memory_type=MemoryType.PHOTO,
-        category="Places & Travel",
-        memory_date=datetime(2024, 10, 14, 17, 45),
-        is_pinned=True,
-        location="Giou-ji Temple, Kyoto, Japan",
-        tags=["travel", "kyoto", "mindfulness", "japan", "gardens"],
-        extracted_entities=ExtractedEntities(
-            people=["Elderly Gardener"],
-            places=["Giou-ji Temple", "Kyoto", "Arashiyama"],
-            dates=["Autumn 2024"],
-            topics=["gardens", "mastery", "zen"],
-            details=["Over 120 varieties of moss cultivated since Heian period"]
-        ),
-        personal_notes="Must revisit in winter when snow blankets the thatch.",
-        privacy_level=PrivacyLevel.PRIVATE,
-        collection_ids=["col-1"],
-        attachments=[
-            MemoryAttachment(
-                id="att-001",
-                memory_id="mem-001",
-                user_id=INITIAL_PROFILE.id,
-                storage_path="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&auto=format&fit=crop&q=80",
-                file_name="kyoto-moss-temple.jpg",
-                file_type="image/jpeg",
-                file_size=2450120,
-                extracted_text="Handwritten temple entry slip: Giou-ji Autumn 2024",
-                created_at=datetime(2024, 10, 14, 17, 48),
-            )
+SAMPLE_TRIPS = [
+    TripResponse(
+        id="trip-01",
+        user_id="usr-traveler-1",
+        author_name="Aria Montgomery",
+        author_avatar="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+        title="Kyoto in Autumn: Golden Temples, Bamboo Groves & Traditional Ryokans",
+        destination="Kyoto",
+        country="Japan",
+        travel_dates="Oct 14 - Oct 21, 2024",
+        duration_days=7,
+        travel_style="Couple",
+        budget_total="$1,450",
+        hotel_price_range="$75 - $140 / night",
+        summary="A breathtaking 7-day journey exploring Gion geisha districts, Arashiyama bamboo forests, and morning matcha ceremonies. We stayed in an authentic wooden machiya and sampled Michelin-rated ramen.",
+        itinerary="Day 1: Arrival & evening walk through Pontocho Alley.\nDay 2: Fushimi Inari gates at 6:30 AM before crowds.\nDay 3: Arashiyama bamboo grove & Tenryu-ji.\nDay 4: Day trip to Nara deer park.\nDay 5: Gion tea ceremony & Kiyomizu-dera sunset.\nDay 6: Nishiki Market food tour.\nDay 7: Zen meditation at Ryoan-ji & departure.",
+        pros=[
+            "Extremely safe, spotless, and easy to navigate via bus & metro",
+            "Incredible culinary scene ranging from $8 street soba to multi-course Kaiseki",
+            "Serene zen gardens that feel truly magical early in the morning",
+            "Locals are remarkably polite and welcoming to travelers",
         ],
-        connections=[],
-        created_at=datetime(2024, 10, 14, 17, 50),
-        updated_at=datetime(2024, 10, 14, 17, 50),
-    ),
-    MemoryResponse(
-        id="mem-002",
-        user_id=INITIAL_PROFILE.id,
-        title="Late Night Strategy with Alex on Agent Memory Systems",
-        description="""Dinner at Blue Bottle Roastery with Alex Chen. We debated vector retrieval versus symbolic knowledge graphs for long-term AI memory persistence.
-
-Alex's thesis: Raw embeddings without entity-linking degrade over long spans because temporal decay isn't encoded in pure cosine distances. A memory from 3 years ago about coffee might eclipse yesterday's urgent discussion on the same topic.
-
-We sketched a hybrid retrieval pattern:
-1. High-dimensional semantic projection for associative serendipity
-2. Temporal decay curves calibrated by sentiment salience
-3. Direct entity links for precise biographical grounding
-
-Agreed to prototype this by mid-November before our quarterly summit.""",
-        ai_summary="Strategy debate with Alex Chen on hybrid vector retrieval, temporal decay curves, and entity-linking for long-term AI memory.",
-        memory_type=MemoryType.NOTE,
-        category="Ideas & Projects",
-        memory_date=datetime(2024, 11, 4, 22, 15),
-        is_pinned=True,
-        location="Blue Bottle Roastery, San Francisco",
-        tags=["tech", "ai", "rag", "architecture", "san-francisco"],
-        extracted_entities=ExtractedEntities(
-            people=["Alex Chen"],
-            places=["Blue Bottle Roastery", "San Francisco"],
-            dates=["Mid-November summit"],
-            topics=["agent memory", "vector retrieval", "temporal decay"],
-            details=["Sketch 3-stage hybrid retrieval pattern"]
-        ),
-        personal_notes="Alex will test the benchmark dataset on weekend.",
-        privacy_level=PrivacyLevel.PRIVATE,
-        collection_ids=["col-2"],
-        attachments=[],
-        connections=[],
-        created_at=datetime(2024, 11, 4, 22, 30),
-        updated_at=datetime(2024, 11, 4, 22, 30),
-    ),
-    MemoryResponse(
-        id="mem-003",
-        user_id=INITIAL_PROFILE.id,
-        title="Maya's Concept on 'Negative Space in Interface Design'",
-        description="""Met Maya Lin at the Nordic Bakery on Hayes St. She brought her sketchbook filled with ink studies exploring how white space functions not as absence, but as deliberate pauses—like rests in a musical score.
-
-She argued that modern software suffers from informational claustrophobia. Interfaces scream for clicks instead of creating room for the user to breathe and recall their own intentions.
-
-Key takeaway for Shadow: Keep the interface obsidian and dark, with luminescence only where memory sparks. Let the silence do the work.
-
-Remember: Maya's birthday is coming up on December 12th! Need to source that vintage typography specimen book from Munich.""",
-        ai_summary="Discussion with Maya Lin on interface negative space as musical rests, plus reminder for her birthday on Dec 12.",
-        memory_type=MemoryType.CONVERSATION,
-        category="Conversations",
-        memory_date=datetime(2024, 10, 28, 14, 0),
-        is_pinned=False,
-        location="Nordic Bakery, Hayes Valley",
-        tags=["design", "minimalism", "philosophy", "conversations"],
-        extracted_entities=ExtractedEntities(
-            people=["Maya Lin"],
-            places=["Nordic Bakery", "Hayes Valley", "Munich"],
-            dates=["December 12"],
-            topics=["negative space", "interface design", "typography"],
-            details=["Vintage typography specimen book from Munich for 30th birthday"]
-        ),
-        personal_notes="Maya loved the cardamom bun.",
-        privacy_level=PrivacyLevel.PRIVATE,
-        collection_ids=["col-3"],
-        attachments=[],
-        connections=[],
-        created_at=datetime(2024, 10, 28, 14, 30),
-        updated_at=datetime(2024, 10, 28, 14, 30),
-    ),
-    MemoryResponse(
-        id="mem-004",
-        user_id=INITIAL_PROFILE.id,
-        title="Finished 'The Architecture of Happiness' by Alain de Botton",
-        description="""Completed the final chapter on the flight back from Zurich. 
-
-De Botton writes: 'What we search for in a work of art is not mere beauty, but an echo of the virtues we lack.' We don't just love buildings or rooms for their physical geometry; we love them when they speak to the person we wish we were when we occupy them.
-
-Applied to digital spaces: What emotional shelter does our software build? Does it foster calmness and clarity, or agitation?
-
-Favorite quote: 'Belief in the significance of architecture is premised on the notion that we are, for better or worse, different people in different places.'""",
-        ai_summary="Notes on Alain de Botton's book exploring how spaces shape internal virtue and emotional shelter in architecture and software.",
-        memory_type=MemoryType.DOCUMENT,
-        category="Media & Recommendations",
-        memory_date=datetime(2024, 9, 18, 19, 20),
-        is_pinned=False,
-        location="Flight LX38, Swiss Air",
-        tags=["books", "philosophy", "architecture", "reading"],
-        extracted_entities=ExtractedEntities(
-            people=["Alain de Botton"],
-            places=["Zurich"],
-            dates=["September 2024"],
-            topics=["architecture", "happiness", "virtues", "design philosophy"],
-            details=["De Botton: Architecture as emotional shelter for the self"]
-        ),
-        personal_notes="Re-read chapter 4 before starting the living room redesign.",
-        privacy_level=PrivacyLevel.PRIVATE,
-        collection_ids=["col-4"],
-        attachments=[],
-        connections=[],
-        created_at=datetime(2024, 9, 18, 20, 0),
-        updated_at=datetime(2024, 9, 18, 20, 0),
-    ),
-    MemoryResponse(
-        id="mem-005",
-        user_id=INITIAL_PROFILE.id,
-        title="Espresso Tasting Notes: Sidama Bensa Natural",
-        description="""Dialed in 18g in, 42g out in 28 seconds on 9 bars. 
-Tasting notes: Vibrant bergamot aroma followed immediately by stewed wild blueberry, candied lemon rind, and a remarkably clean lilac floral finish. Very silky body with zero astringency.
-
-Roaster: Tim Wendelboe (roasted Oct 2).
-Grinder setting: 3.4 on the P64 SSP MP burrs. Water composition: 45ppm GH / 20ppm KH.""",
-        ai_summary="Espresso extraction profile and tasting notes for Tim Wendelboe Ethiopian Sidama Bensa Natural.",
-        memory_type=MemoryType.NOTE,
-        category="People & Experiences",
-        memory_date=datetime(2024, 10, 20, 8, 30),
-        is_pinned=False,
-        location="Home Espresso Station",
-        tags=["coffee", "espresso", "sensory", "rituals"],
-        extracted_entities=ExtractedEntities(
-            people=["Tim Wendelboe"],
-            places=["Home Station", "Ethiopia"],
-            dates=["Oct 20"],
-            topics=["espresso", "extraction", "taste profile"],
-            details=["18g in, 42g out, 28 seconds, 9 bars pressure, P64 setting 3.4"]
-        ),
-        personal_notes="Best shot of the bag yet.",
-        privacy_level=PrivacyLevel.PRIVATE,
-        collection_ids=[],
-        attachments=[
-            MemoryAttachment(
-                id="att-002",
-                memory_id="mem-005",
-                user_id=INITIAL_PROFILE.id,
-                storage_path="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80",
-                file_name="espresso-crema.jpg",
-                file_type="image/jpeg",
-                file_size=1820400,
-                extracted_text="Roaster Bag label: Sidama Bensa Anaerobic Natural Process",
-                created_at=datetime(2024, 10, 20, 8, 32),
-            )
+        cons=[
+            "Arashiyama and Kiyomizu-dera get intensely crowded between 11 AM and 4 PM",
+            "Traditional ryokans book out 3-4 months in advance",
+            "Many authentic cafes are cash-only (7-Eleven ATMs are a lifesaver)",
+            "Lots of walking uphill and cobblestone steps—bring good sneakers",
         ],
-        connections=[],
-        created_at=datetime(2024, 10, 20, 8, 35),
-        updated_at=datetime(2024, 10, 20, 8, 35),
+        best_time_to_visit="Mid-October to late November for maple leaves, or late March for cherry blossoms.",
+        local_food_recommendations=[
+            "Honke Owariya (550-year-old soba restaurant)",
+            "Gion Duck Noodles (hidden alleyway broth)",
+            "Nishiki Market grilled dango & wagyu skewers",
+        ],
+        hotel_recommendations=[
+            "Ryokan Yamazaki ($95/night, authentic tatami & garden)",
+            "The Pocket Hotel Kyoto Shijo ($55/night, clean modern pod style)",
+            "Sowaka Gion ($220/night, luxury restored villa)",
+        ],
+        images=[
+            TripImage(id="img-1", url="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&auto=format&fit=crop&q=80", caption="Golden Pavilion (Kinkaku-ji) reflection", place_type="spot"),
+            TripImage(id="img-2", url="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?w=800&auto=format&fit=crop&q=80", caption="Traditional Gion wooden street at dusk", place_type="spot"),
+            TripImage(id="img-3", url="https://images.unsplash.com/photo-1578637387939-43c525550085?w=800&auto=format&fit=crop&q=80", caption="Matcha & wagashi dessert in Arashiyama", place_type="food"),
+            TripImage(id="img-4", url="https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=800&auto=format&fit=crop&q=80", caption="Fushimi Inari vermillion torii gates", place_type="spot"),
+        ],
+        cover_image="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=1200&auto=format&fit=crop&q=80",
+        likes_count=142,
+        questions_count=6,
+        created_at=datetime(2024, 10, 24, 12, 0),
     ),
-    MemoryResponse(
-        id="mem-006",
-        user_id=INITIAL_PROFILE.id,
-        title="Dr. Aris Thorne on Epigenetic Memory & Biological Clocks",
-        description="""Attended a closed symposium at UCSF with Dr. Aris Thorne. He presented compelling findings on DNA methylation marks functioning as physical biological memories of acute environmental shocks.
-
-Key takeaway: Cells don't merely run code; they carry scar-tissue records of past winters, fevers, and stress. 
-
-Thorne remarked during Q&A: 'Memory is the fundamental mechanism by which a biological system resists entropy.' When a system can no longer record what broke it yesterday, it dies tomorrow.""",
-        ai_summary="Symposium notes from Dr. Aris Thorne on epigenetic DNA methylation marks and memory as an anti-entropy mechanism.",
-        memory_type=MemoryType.DOCUMENT,
-        category="Ideas & Projects",
-        memory_date=datetime(2024, 8, 15, 15, 0),
-        is_pinned=False,
-        location="UCSF Mission Bay, San Francisco",
-        tags=["science", "biology", "genetics", "philosophy"],
-        extracted_entities=ExtractedEntities(
-            people=["Dr. Aris Thorne"],
-            places=["UCSF Mission Bay", "San Francisco"],
-            dates=["August 15, 2024"],
-            topics=["epigenetics", "entropy", "cellular memory"],
-            details=["DNA methylation marks as physical biological memories of acute shock"]
-        ),
-        personal_notes="Look up Thorne's 2023 paper in Nature Neuroscience.",
-        privacy_level=PrivacyLevel.PRIVATE,
-        collection_ids=[],
-        attachments=[],
-        connections=[],
-        created_at=datetime(2024, 8, 15, 16, 0),
-        updated_at=datetime(2024, 8, 15, 16, 0),
+    TripResponse(
+        id="trip-02",
+        user_id="usr-traveler-2",
+        author_name="Julian Chen",
+        author_avatar="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&auto=format&fit=crop&q=80",
+        title="Ubud & Canggu, Bali: Private Jungle Villas, Digital Nomad Life & Surf",
+        destination="Bali",
+        country="Indonesia",
+        travel_dates="Sep 01 - Sep 14, 2024",
+        duration_days=14,
+        travel_style="Backpacking",
+        budget_total="$920",
+        hotel_price_range="$25 - $70 / night",
+        summary="Two weeks split between the spiritual jungle of Ubud and the surf breaks of Canggu. Rented a scooter for $5/day, drank fresh dragonfruit smoothies every morning, and worked remotely from bamboo co-working spaces.",
+        itinerary="Week 1: Ubud waterfalls (Tegenungan, Tibumana), yoga pavilions, Campuhan Ridge walk, and monkey forest.\nWeek 2: Canggu beach sunsets, beginner surf lessons at Echo Beach, and night markets in Pererenan.",
+        pros=[
+            "Unbeatable value: luxury private villas with infinity pools for under $65/night",
+            "Vibrant digital nomad community with ultra-fast starlink wifi cafes",
+            "Superb healthy dining: acai bowls, vegan feasts, and $2 Nasi Goreng warungs",
+            "Incredible tropical scenery and lush terraced rice fields",
+        ],
+        cons=[
+            "Traffic between Canggu, Seminyak, and Ubud can be brutal (scooter is required)",
+            "Watch out for Bali Belly—always drink bottled/filtered water and avoid raw ice from roadside carts",
+            "Humid tropical weather; sudden torrential downpours in afternoon",
+            "Can feel over-touristy in downtown Seminyak",
+        ],
+        best_time_to_visit="May to September (dry season with pleasant ocean breezes).",
+        local_food_recommendations=[
+            "Warung Bu Mi (authentic Canggu buffet warung for $3)",
+            "Clear Cafe Ubud (treehouse seating with healthy juices)",
+            "Milk & Madu (best sourdough breakfast & coffee)",
+        ],
+        hotel_recommendations=[
+            "Samyama Jungle Villa Ubud ($52/night, overlooking ravine pool)",
+            "Kos One Hostel Canggu ($24/night, famous pool party hub)",
+            "Bambu Indah ($180/night, eco-luxury bamboo treehouse)",
+        ],
+        images=[
+            TripImage(id="img-21", url="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=800&auto=format&fit=crop&q=80", caption="Tegalalang Rice Terraces sunrise", place_type="scenery"),
+            TripImage(id="img-22", url="https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800&auto=format&fit=crop&q=80", caption="Jungle infinity pool villa", place_type="hotel"),
+            TripImage(id="img-23", url="https://images.unsplash.com/photo-1555400038-63f5ba517a47?w=800&auto=format&fit=crop&q=80", caption="Canggu sunset surf", place_type="activity"),
+        ],
+        cover_image="https://images.unsplash.com/photo-1537996194471-e657df975ab4?w=1200&auto=format&fit=crop&q=80",
+        likes_count=189,
+        questions_count=9,
+        created_at=datetime(2024, 9, 18, 14, 30),
     ),
-    MemoryResponse(
-        id="mem-007",
-        user_id=INITIAL_PROFILE.id,
-        title="Morning 10k Run through Pacific Heights to Marina",
-        description="""Ran along Broadway down to Crissy Field and back. Crisp coastal air, fog rolling under the Golden Gate Bridge like frozen smoke. 
-
-Felt strong pacing: 4:48/km steady. Heart rate averaged 146 bpm. The rhythm of footfalls clears out the cognitive debris from the week better than any journal prompt. 
-
-Noted the smell of eucalyptus trees near the Presidio gates.""",
-        ai_summary="10k morning run through Pacific Heights to Crissy Field with brisk pace and Golden Gate fog views.",
-        memory_type=MemoryType.EVENT,
-        category="Health & Wellness",
-        memory_date=datetime(2024, 11, 10, 7, 15),
-        is_pinned=False,
-        location="Crissy Field, San Francisco",
-        tags=["fitness", "running", "morning", "health"],
-        extracted_entities=ExtractedEntities(
-            people=[],
-            places=["Crissy Field", "Pacific Heights", "Golden Gate Bridge", "San Francisco"],
-            dates=["Nov 10, 2024"],
-            topics=["running", "cardio", "clarity"],
-            details=["Pacing 4:48/km steady, average HR 146 bpm"]
-        ),
-        personal_notes="Left calf slightly tight on the uphill return.",
-        privacy_level=PrivacyLevel.PRIVATE,
-        collection_ids=[],
-        attachments=[],
-        connections=[],
-        created_at=datetime(2024, 11, 10, 8, 40),
-        updated_at=datetime(2024, 11, 10, 8, 40),
+    TripResponse(
+        id="trip-03",
+        user_id="usr-traveler-3",
+        author_name="Elena Rostova",
+        author_avatar="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&auto=format&fit=crop&q=80",
+        title="Amalfi Coast & Positano: Cliffside Pasta, Lemon Groves & Capri Boat Charters",
+        destination="Amalfi Coast",
+        country="Italy",
+        travel_dates="Jun 10 - Jun 16, 2024",
+        duration_days=6,
+        travel_style="Luxury",
+        budget_total="$2,800",
+        hotel_price_range="$180 - $350 / night",
+        summary="A dream coastal escape driving vintage Vespas along hairpin sea cliffs, dining on fresh seafood linguine with limoncello spritz, and chartering a wooden gozzo boat around the Capri sea caves.",
+        itinerary="Day 1: Ferry from Salerno into Positano, sunset drinks at Franco's Bar.\nDay 2: Path of the Gods hike (Sentiero degli Dei) from Bomerano.\nDay 3: Private wooden boat charter to Capri and the Faraglioni rocks.\nDay 4: Ravello gardens (Villa Cimbrone & Villa Rufolo).\nDay 5: Beach day at Fiordo di Furore.\nDay 6: Limoncello tasting in Amalfi town & departure.",
+        pros=[
+            "Unrivaled Mediterranean views: pastel cliffside homes hanging over turquoise sea",
+            "World-class food: handmade lemon pasta, buffalo mozzarella, and fresh catch of the day",
+            "Hikes like Path of the Gods offer once-in-a-lifetime panoramas",
+            "Glamorous European summer energy with wonderful ferry connections",
+        ],
+        cons=[
+            "Extremely expensive accommodation, especially in peak months (June - August)",
+            "Very crowded ferry docks and steep stone stairs everywhere",
+            "Driving a rental car is terrifying on narrow cliff roads; take public ferries instead",
+            "Beach clubs require $40 - $70 sunbed reservations days ahead",
+        ],
+        best_time_to_visit="May or September (fewer tourists, warm water, and lower room rates).",
+        local_food_recommendations=[
+            "Da Vincenzo Positano (seafood scialatielli)",
+            "Trattoria da Gemma in Amalfi (lemon risotto)",
+            "Bar Franco (sunset cocktail with panoramic cliff view)",
+        ],
+        hotel_recommendations=[
+            "Hotel Poseidon ($280/night, vintage rooftop terrace)",
+            "Casa Angelina ($450/night, ultra-modern luxury in Praiano)",
+            "B&B Dimora Del Podesta ($140/night, cozy family-run gem)",
+        ],
+        images=[
+            TripImage(id="img-31", url="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=800&auto=format&fit=crop&q=80", caption="Positano pastel village cascading into the sea", place_type="spot"),
+            TripImage(id="img-32", url="https://images.unsplash.com/photo-1516483638261-f4dbaf036963?w=800&auto=format&fit=crop&q=80", caption="Wooden boat cruise past Capri Faraglioni", place_type="activity"),
+            TripImage(id="img-33", url="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=80", caption="Handmade seafood pasta & local white wine", place_type="food"),
+        ],
+        cover_image="https://images.unsplash.com/photo-1533105079780-92b9be482077?w=1200&auto=format&fit=crop&q=80",
+        likes_count=214,
+        questions_count=12,
+        created_at=datetime(2024, 6, 20, 10, 15),
+    ),
+    TripResponse(
+        id="trip-04",
+        user_id="usr-traveler-4",
+        author_name="Marcus Vance",
+        author_avatar="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&auto=format&fit=crop&q=80",
+        title="Swiss Alps & Zermatt: Glacier Hikes, Alpine Fondue & The Matterhorn",
+        destination="Zermatt",
+        country="Switzerland",
+        travel_dates="Aug 05 - Aug 11, 2024",
+        duration_days=6,
+        travel_style="Solo",
+        budget_total="$1,850",
+        hotel_price_range="$130 - $220 / night",
+        summary="Epic solo mountain trek through the Swiss Alps. Woke up at 5 AM to catch the sunrise reflection of the Matterhorn in Stellisee lake, rode the Gornergrat cogwheel train, and ate piping hot cheese fondue in car-free Zermatt village.",
+        itinerary="Day 1: Train from Zurich Airport to car-free Zermatt.\nDay 2: Five Lakes Walk (5-Seenweg) starting at Blauherd.\nDay 3: Gornergrat railway at 3,089m elevation.\nDay 4: Glacier Paradise cable car & ice palace.\nDay 5: Alpine meadows hike down through Findeln.\nDay 6: Panoramic Swiss rail return to Geneva.",
+        pros=[
+            "Pristine mountain air, mirror-like alpine lakes, and world-class trail markings",
+            "Switzerland's rail and cable car network is like clockwork; you never need a car",
+            "Zermatt is completely car-free—quiet, clean, and peaceful electric taxis only",
+            "Glacier views that will stay in your memory forever",
+        ],
+        cons=[
+            "Food and dining are notoriously expensive ($35+ for basic burger, $45 fondue)",
+            "High mountain weather can change in 15 minutes; layers and rain shell are mandatory",
+            "Cable car passes add up fast (get the Swiss Travel Pass to save 50%)",
+            "Altitude above 3,000m can cause mild headaches on day 1",
+        ],
+        best_time_to_visit="July to early September for hiking and wildflowers, or January to March for skiing.",
+        local_food_recommendations=[
+            "Chez Vrony in Findeln (legendary alpine fondue & dried beef)",
+            "Fuchs Bakery (famous Matterhorn chocolate bread)",
+            "Walliserkanne (traditional raclette dinner)",
+        ],
+        hotel_recommendations=[
+            "Hotel Zermama ($145/night, hipster alpine boutique)",
+            "Matterhorn Hostel ($45/night, best social budget stay)",
+            "The Omnia ($390/night, cliffside luxury chalet)",
+        ],
+        images=[
+            TripImage(id="img-41", url="https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?w=800&auto=format&fit=crop&q=80", caption="Matterhorn mirrored in Stellisee lake at sunrise", place_type="spot"),
+            TripImage(id="img-42", url="https://images.unsplash.com/photo-1502784444187-359ac186c5bb?w=800&auto=format&fit=crop&q=80", caption="Alpine hiking trail through pine forest", place_type="activity"),
+        ],
+        cover_image="https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?w=1200&auto=format&fit=crop&q=80",
+        likes_count=176,
+        questions_count=5,
+        created_at=datetime(2024, 8, 14, 16, 40),
     ),
 ]
 
-# Initial seed reminders
-INITIAL_REMINDERS = [
-    ReminderResponse(
-        id="rem-001",
-        user_id=INITIAL_PROFILE.id,
-        memory_id="mem-003",
-        title="Maya's 30th Birthday (Order Munich typography specimen book)",
-        notes="Order Munich vintage book before Nov 30",
-        remind_at=datetime(2024, 12, 12, 9, 0),
-        reminder_type=ReminderType.BIRTHDAY,
-        recurrence=RecurrenceRule.YEARLY,
-        is_completed=False,
-        memory_title="Maya's Concept on 'Negative Space in Interface Design'",
-        created_at=datetime(2024, 10, 28, 14, 35),
+SAMPLE_QUESTIONS: List[QuestionWithAnswersResponse] = [
+    QuestionWithAnswersResponse(
+        id="q-01",
+        trip_id="trip-01",
+        destination="Kyoto",
+        author_name="Sarah Jenkins",
+        question="What is the realistic price for a nice hotel or ryokan for a couple in Kyoto during November?",
+        category="hotel_price",
+        created_at=datetime(2024, 10, 26, 11, 0),
+        answers=[
+            AnswerResponse(
+                id="ans-01",
+                question_id="q-01",
+                author_name="Aria Montgomery (Visited Oct 2024)",
+                author_visited=True,
+                answer="Expect to pay around $85 - $130/night for a clean, boutique Japanese hotel near Shijo/Karasuma station. If you want an authentic ryokan with dinner included, plan for $200 - $320/night. Book at least 2 months ahead because November is peak autumn foliage!",
+                hotel_name="Ryokan Yamazaki or Pocket Hotel Shijo",
+                hotel_price_per_night="$95 / night",
+                helpful_votes=34,
+                created_at=datetime(2024, 10, 26, 13, 15),
+            ),
+            AnswerResponse(
+                id="ans-02",
+                question_id="q-01",
+                author_name="Kenji Sato (Local Guide)",
+                author_visited=True,
+                answer="A great money-saving tip: Stay near Kyoto Main Station rather than central Gion. Hotels there are modern, cost about $60-80/night, and you have direct subway lines to all major temples.",
+                hotel_name="Hotel Vischio Kyoto",
+                hotel_price_per_night="$72 / night",
+                helpful_votes=19,
+                created_at=datetime(2024, 10, 27, 9, 40),
+            )
+        ]
     ),
-    ReminderResponse(
-        id="rem-002",
-        user_id=INITIAL_PROFILE.id,
-        memory_id="mem-002",
-        title="Deliver Agent Memory Prototype before Quarterly Summit with Alex",
-        notes="Prepare hybrid retrieval slides",
-        remind_at=datetime(2024, 11, 28, 18, 0),
-        reminder_type=ReminderType.FOLLOW_UP,
-        recurrence=RecurrenceRule.NONE,
-        is_completed=False,
-        memory_title="Late Night Strategy with Alex on Agent Memory Systems",
-        created_at=datetime(2024, 11, 4, 22, 35),
+    QuestionWithAnswersResponse(
+        id="q-02",
+        trip_id="trip-02",
+        destination="Bali",
+        author_name="David Miller",
+        question="Is it safe to rent a scooter in Ubud if I have never driven one in Asia before?",
+        category="safety",
+        created_at=datetime(2024, 9, 20, 15, 30),
+        answers=[
+            AnswerResponse(
+                id="ans-03",
+                question_id="q-02",
+                author_name="Julian Chen (Visited Sep 2024)",
+                author_visited=True,
+                answer="Honestly, I wouldn't recommend learning in downtown Ubud or Canggu—traffic has narrow roads, dogs, and potholes. Instead, practice on quiet side streets in Penestanan or hire a Gojek/Grab bike driver for $1-$2 per ride. It's super cheap and stress-free!",
+                hotel_name=None,
+                hotel_price_per_night=None,
+                helpful_votes=42,
+                created_at=datetime(2024, 9, 20, 18, 0),
+            )
+        ]
     ),
-    ReminderResponse(
-        id="rem-003",
-        user_id=INITIAL_PROFILE.id,
-        memory_id="mem-001",
-        title="Annual Kyoto Anniversary Reflection: Giou-ji Stillness",
-        notes="Look back on lessons of Heian stillness",
-        remind_at=datetime(2025, 10, 14, 9, 0),
-        reminder_type=ReminderType.EVENT,
-        recurrence=RecurrenceRule.YEARLY,
-        is_completed=False,
-        memory_title="Kyoto Twilight & The Hidden Moss Garden",
-        created_at=datetime(2024, 10, 14, 18, 0),
+    QuestionWithAnswersResponse(
+        id="q-03",
+        trip_id="trip-03",
+        destination="Amalfi Coast",
+        author_name="Chloe Dupuis",
+        question="Are hotel prices in Positano worth it, or is it better to base ourselves in Sorrento or Amalfi town?",
+        category="hotel_price",
+        created_at=datetime(2024, 7, 2, 8, 20),
+        answers=[
+            AnswerResponse(
+                id="ans-04",
+                question_id="q-03",
+                author_name="Elena Rostova (Visited Jun 2024)",
+                author_visited=True,
+                answer="Positano hotels average $250 - $400/night in summer. If you want the iconic view from your balcony, do 1-2 nights in Positano, but for the rest of your trip stay in Amalfi town or Praiano where rooms are $120-$160/night and you avoid dragging luggage up 300 steps!",
+                hotel_name="B&B Dimora Del Podesta (Praiano)",
+                hotel_price_per_night="$140 / night",
+                helpful_votes=28,
+                created_at=datetime(2024, 7, 2, 10, 45),
+            )
+        ]
     ),
 ]
 
 
-class MemoryRepository:
+class TripRepository:
     def __init__(self):
-        # Pristine clean repository with zero dummy memories
-        self.memories: Dict[str, MemoryResponse] = {}
-        self.collections: Dict[str, CollectionResponse] = {
-            "col-1": CollectionResponse(
-                id="col-1",
-                user_id=INITIAL_PROFILE.id,
-                name="Personal Notes",
-                description="Daily thoughts, reflections, and personal journal entries.",
-                icon="book-open",
-                accent_shade="#8B5CF6",
-                memory_count=0,
-                last_viewed_at=datetime.utcnow(),
-                created_at=datetime.utcnow(),
-            ),
-            "col-2": CollectionResponse(
-                id="col-2",
-                user_id=INITIAL_PROFILE.id,
-                name="Ideas & Projects",
-                description="Breakthrough systems ideas, project roadmaps, and architecture notes.",
-                icon="cpu",
-                accent_shade="#3B82F6",
-                memory_count=0,
-                last_viewed_at=datetime.utcnow(),
-                created_at=datetime.utcnow(),
-            ),
-            "col-3": CollectionResponse(
-                id="col-3",
-                user_id=INITIAL_PROFILE.id,
-                name="Reading & Media",
-                description="Book notes, articles, research papers, and media recommendations.",
-                icon="compass",
-                accent_shade="#A855F7",
-                memory_count=0,
-                last_viewed_at=datetime.utcnow(),
-                created_at=datetime.utcnow(),
-            ),
-        }
-        self.reminders: Dict[str, ReminderResponse] = {}
-        self.profile: UserProfile = INITIAL_PROFILE
+        self.trips: Dict[str, TripResponse] = {t.id: t for t in SAMPLE_TRIPS}
+        self.questions: Dict[str, QuestionWithAnswersResponse] = {q.id: q for q in SAMPLE_QUESTIONS}
 
-    def clear_all_data(self):
-        self.memories.clear()
-        self.reminders.clear()
+    def get_all_trips(self, destination: Optional[str] = None, style: Optional[str] = None, query: Optional[str] = None) -> List[TripResponse]:
+        results = list(self.trips.values())
+        if destination and destination.lower() != "all":
+            results = [t for t in results if destination.lower() in t.destination.lower() or destination.lower() in t.country.lower()]
+        if style and style.lower() != "all":
+            results = [t for t in results if style.lower() == t.travel_style.lower()]
+        if query and query.strip():
+            q = query.lower().strip()
+            results = [
+                t for t in results
+                if q in t.title.lower()
+                or q in t.destination.lower()
+                or q in t.country.lower()
+                or q in t.summary.lower()
+                or any(q in p.lower() for p in t.pros)
+                or any(q in c.lower() for c in t.cons)
+            ]
+        return sorted(results, key=lambda x: x.created_at, reverse=True)
 
-    def load_sample_data(self):
-        self.memories = {m.id: m for m in INITIAL_MEMORIES}
-        self.reminders = {r.id: r for r in INITIAL_REMINDERS}
-        for m in self.memories.values():
-            m.connections = discover_memory_links(m, list(self.memories.values()))
+    def get_trip_by_id(self, trip_id: str) -> Optional[TripResponse]:
+        return self.trips.get(trip_id)
 
-    def get_all_memories(self, user_id: str) -> List[MemoryResponse]:
-        mems = [m for m in self.memories.values() if m.user_id == user_id]
-        return sorted(mems, key=lambda x: x.memory_date, reverse=True)
+    def create_trip(self, data: TripCreate, author_name: str = "Fellow Traveler") -> TripResponse:
+        trip_id = f"trip-{uuid.uuid4().hex[:8]}"
+        cover = data.cover_image or (data.images[0] if data.images else "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=1200&auto=format&fit=crop&q=80")
+        
+        trip_images = [
+            TripImage(id=f"img-{i}", url=url, place_type="scenery")
+            for i, url in enumerate(data.images)
+        ]
 
-    def get_memory(self, memory_id: str) -> Optional[MemoryResponse]:
-        return self.memories.get(memory_id)
-
-    def create_memory(self, user_id: str, data: MemoryCreate, attachments: List[MemoryAttachment] = None) -> MemoryResponse:
-        now = datetime.utcnow()
-        mem_id = f"mem-{uuid.uuid4().hex[:8]}"
-        new_mem = MemoryResponse(
-            id=mem_id,
-            user_id=user_id,
+        new_trip = TripResponse(
+            id=trip_id,
+            user_id="usr-current-user",
+            author_name=author_name,
+            author_avatar="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80",
             title=data.title,
-            description=data.description or "",
-            memory_type=data.memory_type,
-            memory_date=data.memory_date,
-            location=data.location,
-            category=data.category,
-            tags=data.tags,
-            ai_summary=data.ai_summary or (data.description[:160] if data.description else ""),
-            extracted_entities=data.extracted_entities,
-            personal_notes=data.personal_notes,
-            source_url=data.source_url,
-            privacy_level=data.privacy_level,
-            is_pinned=data.is_pinned,
-            collection_ids=data.collection_ids,
-            attachments=attachments or [],
-            connections=[],
-            created_at=now,
-            updated_at=now,
+            destination=data.destination,
+            country=data.country,
+            travel_dates=data.travel_dates,
+            duration_days=data.duration_days,
+            travel_style=data.travel_style,
+            budget_total=data.budget_total,
+            hotel_price_range=data.hotel_price_range,
+            summary=data.summary,
+            itinerary=data.itinerary,
+            pros=data.pros,
+            cons=data.cons,
+            best_time_to_visit=data.best_time_to_visit,
+            local_food_recommendations=data.local_food_recommendations,
+            hotel_recommendations=data.hotel_recommendations,
+            images=trip_images,
+            cover_image=cover,
+            likes_count=1,
+            questions_count=0,
+            created_at=datetime.utcnow(),
         )
-        new_mem.connections = discover_memory_links(new_mem, list(self.memories.values()))
-        self.memories[mem_id] = new_mem
-        return new_mem
+        self.trips[trip_id] = new_trip
+        return new_trip
 
-    def update_memory(self, memory_id: str, updates: dict) -> Optional[MemoryResponse]:
-        mem = self.memories.get(memory_id)
-        if not mem:
-            return None
-        data = mem.model_dump()
-        for k, v in updates.items():
-            if v is not None:
-                data[k] = v
-        data["updated_at"] = datetime.utcnow()
-        updated = MemoryResponse(**data)
-        self.memories[memory_id] = updated
-        return updated
-
-    def delete_memory(self, memory_id: str) -> bool:
-        if memory_id in self.memories:
-            del self.memories[memory_id]
-            # Remove linked reminders
-            to_del = [rid for rid, r in self.reminders.items() if r.memory_id == memory_id]
-            for rid in to_del:
-                del self.reminders[rid]
-            return True
-        return False
-
-    def get_collections(self, user_id: str) -> List[CollectionResponse]:
-        cols = [c for c in self.collections.values() if c.user_id == user_id]
-        res = []
-        for c in cols:
-            count = sum(1 for m in self.memories.values() if c.id in m.collection_ids)
-            c_copy = c.model_copy()
-            c_copy.memory_count = count
-            res.append(c_copy)
-        return res
-
-    def get_collection(self, col_id: str) -> Optional[CollectionResponse]:
-        return self.collections.get(col_id)
-
-    def create_collection(self, user_id: str, col: CollectionResponse) -> CollectionResponse:
-        self.collections[col.id] = col
-        return col
-
-    def delete_collection(self, col_id: str) -> bool:
-        if col_id in self.collections:
-            del self.collections[col_id]
-            for m in self.memories.values():
-                if col_id in m.collection_ids:
-                    m.collection_ids.remove(col_id)
-            return True
-        return False
-
-    def get_reminders(self, user_id: str) -> List[ReminderResponse]:
-        rems = [r for r in self.reminders.values() if r.user_id == user_id]
-        return sorted(rems, key=lambda x: x.remind_at)
-
-    def create_reminder(self, user_id: str, reminder: ReminderResponse) -> ReminderResponse:
-        self.reminders[reminder.id] = reminder
-        return reminder
-
-    def toggle_reminder(self, reminder_id: str) -> Optional[ReminderResponse]:
-        rem = self.reminders.get(reminder_id)
-        if rem:
-            rem.is_completed = not rem.is_completed
-            return rem
+    def like_trip(self, trip_id: str) -> Optional[TripResponse]:
+        trip = self.trips.get(trip_id)
+        if trip:
+            trip.likes_count += 1
+            return trip
         return None
 
-    def delete_reminder(self, reminder_id: str) -> bool:
-        if reminder_id in self.reminders:
-            del self.reminders[reminder_id]
-            return True
-        return False
+    def get_questions(self, destination: Optional[str] = None, trip_id: Optional[str] = None) -> List[QuestionWithAnswersResponse]:
+        results = list(self.questions.values())
+        if trip_id:
+            results = [q for q in results if q.trip_id == trip_id]
+        elif destination and destination.lower() != "all":
+            results = [q for q in results if destination.lower() in q.destination.lower()]
+        return sorted(results, key=lambda x: x.created_at, reverse=True)
 
-    def get_profile(self) -> UserProfile:
-        return self.profile
+    def add_question(self, data: QuestionCreate) -> QuestionWithAnswersResponse:
+        q_id = f"q-{uuid.uuid4().hex[:8]}"
+        new_q = QuestionWithAnswersResponse(
+            id=q_id,
+            trip_id=data.trip_id,
+            destination=data.destination,
+            author_name=data.author_name,
+            question=data.question,
+            category=data.category,
+            created_at=datetime.utcnow(),
+            answers=[],
+        )
+        self.questions[q_id] = new_q
+        if data.trip_id and data.trip_id in self.trips:
+            self.trips[data.trip_id].questions_count += 1
+        return new_q
 
-    def update_profile(self, updates: dict) -> UserProfile:
-        p_data = self.profile.model_dump()
-        for k, v in updates.items():
-            if v is not None:
-                p_data[k] = v
-        self.profile = UserProfile(**p_data)
-        return self.profile
+    def add_answer(self, question_id: str, data: AnswerCreate) -> Optional[AnswerResponse]:
+        q = self.questions.get(question_id)
+        if not q:
+            return None
+        ans_id = f"ans-{uuid.uuid4().hex[:8]}"
+        new_ans = AnswerResponse(
+            id=ans_id,
+            question_id=question_id,
+            author_name=data.author_name,
+            author_visited=data.author_visited,
+            answer=data.answer,
+            hotel_name=data.hotel_name,
+            hotel_price_per_night=data.hotel_price_per_night,
+            helpful_votes=1,
+            created_at=datetime.utcnow(),
+        )
+        q.answers.append(new_ans)
+        return new_ans
+
+    def vote_answer(self, question_id: str, answer_id: str) -> Optional[AnswerResponse]:
+        q = self.questions.get(question_id)
+        if not q:
+            return None
+        for a in q.answers:
+            if a.id == answer_id:
+                a.helpful_votes += 1
+                return a
+        return None
 
 
-db_store = MemoryRepository()
+trip_db = TripRepository()
