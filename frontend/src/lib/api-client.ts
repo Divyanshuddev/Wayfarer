@@ -9,34 +9,15 @@ import {
 } from "@/types";
 import { getApiBaseUrl } from "./api-config";
 import { shadowStore } from "./storage/store";
-import { createClient, isSupabaseConfigured } from "./supabase/client";
 
 const API_BASE_URL = `${getApiBaseUrl()}/api/v1`;
 
 class ApiClient {
   private async getAuthHeaders(): Promise<HeadersInit> {
-    const headers: Record<string, string> = {
+    return {
       "Content-Type": "application/json",
+      "Authorization": "Bearer archivist-demo-jwt",
     };
-
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = createClient();
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          headers["Authorization"] = `Bearer ${session.access_token}`;
-          return headers;
-        }
-      } catch {
-        // ignore
-      }
-    }
-
-    // Default demo token
-    headers["Authorization"] = "Bearer archivist-demo-jwt";
-    return headers;
   }
 
   // --- DASHBOARD ---

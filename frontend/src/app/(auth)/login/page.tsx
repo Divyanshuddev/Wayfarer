@@ -1,7 +1,6 @@
 "use client";
 
 import { authStore } from "@/lib/auth/auth-store";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { ArrowLeft, ArrowRight, Compass, Eye, EyeOff, Lock, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,27 +19,6 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage("");
 
-    // 1. If Supabase is configured, verify via Supabase Auth
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = createClient();
-        const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password: password.trim(),
-        });
-        if (error) {
-          setErrorMessage(error.message);
-          setIsLoading(false);
-          return;
-        }
-        router.push("/");
-        return;
-      } catch (err: any) {
-        console.warn("Supabase auth check:", err);
-      }
-    }
-
-    // 2. Real local auth validation
     const result = authStore.signIn({ email, password });
     if (!result.success) {
       setErrorMessage(result.error || "Authentication failed.");

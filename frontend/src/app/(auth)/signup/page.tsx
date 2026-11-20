@@ -1,7 +1,6 @@
 "use client";
 
 import { authStore } from "@/lib/auth/auth-store";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import { Compass, Eye, EyeOff, Lock, Mail, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -21,32 +20,6 @@ export default function SignupPage() {
     setIsLoading(true);
     setErrorMessage("");
 
-    // 1. Supabase Auth if configured
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = createClient();
-        const { error } = await supabase.auth.signUp({
-          email: email.trim(),
-          password: password.trim(),
-          options: {
-            data: {
-              full_name: fullName.trim(),
-            },
-          },
-        });
-        if (error) {
-          setErrorMessage(error.message);
-          setIsLoading(false);
-          return;
-        }
-        router.push("/");
-        return;
-      } catch (err: any) {
-        console.warn("Supabase signup check:", err);
-      }
-    }
-
-    // 2. Real local registration
     const result = authStore.signUp({
       full_name: fullName,
       email,

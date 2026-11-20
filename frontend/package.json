@@ -3,7 +3,6 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "postinstall": "node -e 'const fs=require(\"fs\"),path=require(\"path\"),link=path.resolve(\"..\",\"node_modules\");try{if(fs.existsSync(link))fs.rmSync(link,{recursive:true,force:true});fs.symlinkSync(path.resolve(\"node_modules\"),link,\"dir\");}catch(e){}'",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -11,8 +10,6 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.7",
-    "@supabase/ssr": "^0.12.7",
-    "@supabase/supabase-js": "^2.119.2",
     "@types/canvas-confetti": "^1.9.0",
     "canvas-confetti": "^1.9.4",
     "class-variance-authority": "^0.7.1",

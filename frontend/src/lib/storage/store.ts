@@ -13,7 +13,7 @@ import {
   initialMemoryLinks,
   initialProfile,
   initialReminders,
-} from "../supabase/mock-data";
+} from "./mock-data";
 
 const STORAGE_KEYS = {
   MEMORIES: "shadow_memories_v2",
@@ -549,8 +549,8 @@ class ShadowStore {
       const incomingMemories: Memory[] = Array.isArray(parsed)
         ? parsed
         : Array.isArray(parsed.memories)
-        ? parsed.memories
-        : [];
+          ? parsed.memories
+          : [];
 
       if (incomingMemories.length === 0) {
         return { success: false, count: 0 };

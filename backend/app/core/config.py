@@ -6,12 +6,6 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Wayfarer – Travel Community & Hotel Intel API"
     API_V1_STR: str = "/api/v1"
     
-    # Supabase Configuration
-    SUPABASE_URL: Optional[str] = None
-    SUPABASE_ANON_KEY: Optional[str] = None
-    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = None
-    SUPABASE_JWT_SECRET: Optional[str] = None
-    
     # OpenAI Configuration
     OPENAI_API_KEY: Optional[str] = None
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"

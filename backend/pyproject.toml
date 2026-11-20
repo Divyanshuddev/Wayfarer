@@ -16,6 +16,5 @@ dependencies = [
     "pymupdf>=2.1",
     "pypdf>=7.1.1",
     "python-multipart>=0.0.34",
-    "supabase>=2.34.1",
     "uvicorn[standard]>=0.54.0",
 ]

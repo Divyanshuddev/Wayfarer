@@ -2,7 +2,6 @@
 
 import { authStore } from "@/lib/auth/auth-store";
 import { tripStore } from "@/lib/storage/trip-store";
-import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   Bell,
   Clock,
@@ -47,16 +46,8 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
     };
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     authStore.signOut();
-    if (isSupabaseConfigured()) {
-      try {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-      } catch (err) {
-        console.warn("Supabase sign out error:", err);
-      }
-    }
     setShowLogoutModal(false);
     router.push("/login");
   };
