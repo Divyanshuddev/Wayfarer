@@ -30,9 +30,6 @@ async def get_dashboard(current_user: AuthUser = Depends(get_current_user)):
         d = today - timedelta(days=i)
         date_str = d.strftime("%b %d")
         count = sum(1 for m in memories if m.memory_date.date() == d)
-        # Seed realistic activity curve if empty
-        if count == 0 and i in [1, 3, 6, 8, 10, 12]:
-            count = (i % 3) + 1
         activity_14_days.append({"date": date_str, "memories": count})
 
     # Rediscover highlight ("On this day" / daily reflection)

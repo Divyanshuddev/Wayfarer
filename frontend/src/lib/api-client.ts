@@ -335,7 +335,10 @@ class ApiClient {
     } catch {
       // fallback
     }
-    return shadowStore.createReminder(data);
+    return shadowStore.createReminder({
+      ...data,
+      title: data.title || "Untitled Reminder",
+    });
   }
 
   async toggleReminder(id: string): Promise<boolean> {

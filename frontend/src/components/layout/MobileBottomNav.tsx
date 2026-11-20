@@ -3,11 +3,11 @@
 import {
   Bell,
   Calendar,
-  FolderKanban,
   History,
   LayoutDashboard,
   Plus,
   Search,
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,12 +24,11 @@ export function MobileBottomNav({ onOpenQuickAdd }: MobileBottomNavProps) {
     { href: "/", label: "Home", icon: LayoutDashboard },
     { href: "/memories", label: "Archive", icon: History },
     { href: "/search", label: "AI Search", icon: Search },
-    { href: "/timeline", label: "Timeline", icon: Calendar },
-    { href: "/reminders", label: "Remind", icon: Bell },
+    { href: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0c0b14]/95 backdrop-blur-lg border-t border-[#232135] px-2 py-1.5 flex items-center justify-around safe-bottom">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0c0b14]/95 backdrop-blur-lg border-t border-[#232135] px-3 py-1.5 flex items-center justify-around safe-bottom">
       {links.slice(0, 2).map((item) => {
         const Icon = item.icon;
         const isActive = pathname === item.href;
@@ -38,7 +37,7 @@ export function MobileBottomNav({ onOpenQuickAdd }: MobileBottomNavProps) {
             key={item.href}
             href={item.href}
             className={`flex flex-col items-center py-1 px-3 text-[10px] font-medium transition-colors ${
-              isActive ? "text-purple-400" : "text-gray-400 hover:text-gray-200"
+              isActive ? "text-purple-400 font-semibold" : "text-[#8E8AA6] hover:text-gray-200"
             }`}
           >
             <Icon className="w-5 h-5 mb-0.5" />
@@ -64,7 +63,7 @@ export function MobileBottomNav({ onOpenQuickAdd }: MobileBottomNavProps) {
             key={item.href}
             href={item.href}
             className={`flex flex-col items-center py-1 px-3 text-[10px] font-medium transition-colors ${
-              isActive ? "text-purple-400" : "text-gray-400 hover:text-gray-200"
+              isActive ? "text-purple-400 font-semibold" : "text-[#8E8AA6] hover:text-gray-200"
             }`}
           >
             <Icon className="w-5 h-5 mb-0.5" />

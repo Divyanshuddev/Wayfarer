@@ -14,7 +14,7 @@ export default function DashboardLayout({
 }) {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
-  // Global ⌘K / Ctrl+K keyboard shortcut to open Quick Add
+  // Global ⌘K / Ctrl+K keyboard shortcut and custom event to open Quick Add
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
@@ -22,8 +22,13 @@ export default function DashboardLayout({
         setIsQuickAddOpen((prev) => !prev);
       }
     };
+    const handleOpenCustom = () => setIsQuickAddOpen(true);
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("open-quick-add", handleOpenCustom);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("open-quick-add", handleOpenCustom);
+    };
   }, []);
 
   return (

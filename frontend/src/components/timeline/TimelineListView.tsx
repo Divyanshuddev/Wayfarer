@@ -49,6 +49,24 @@ export function TimelineListView({ memories }: TimelineListViewProps) {
     ([, items]) => items.length > 0
   );
 
+  if (activeGroups.length === 0) {
+    return (
+      <div className="p-16 text-center rounded-2xl bg-[#0C0C12] border border-dashed border-[#252238] space-y-4 shadow-xl">
+        <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-950/40 border border-purple-800/40 flex items-center justify-center text-[#8B5CF6]">
+          <Clock className="w-7 h-7" />
+        </div>
+        <div className="space-y-1">
+          <h3 className="text-base font-semibold text-[#F4F3F8]">
+            Timeline is Waiting for Moments
+          </h3>
+          <p className="text-xs text-[#8E8AA6] max-w-md mx-auto">
+            Your timeline automatically groups memories into Today, Yesterday, This Week, and Earlier as you capture them.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-2.5 sm:before:left-3.5 before:top-3 before:bottom-3 before:w-0.5 before:bg-gradient-to-b before:from-[#8B5CF6] before:via-purple-900 before:to-transparent">
       {activeGroups.map(([groupTitle, items]) => (

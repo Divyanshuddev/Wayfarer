@@ -16,11 +16,11 @@ import {
 } from "../supabase/mock-data";
 
 const STORAGE_KEYS = {
-  MEMORIES: "shadow_memories_v1",
-  COLLECTIONS: "shadow_collections_v1",
-  REMINDERS: "shadow_reminders_v1",
-  LINKS: "shadow_links_v1",
-  PROFILE: "shadow_profile_v1",
+  MEMORIES: "shadow_memories_v2",
+  COLLECTIONS: "shadow_collections_v2",
+  REMINDERS: "shadow_reminders_v2",
+  LINKS: "shadow_links_v2",
+  PROFILE: "shadow_profile_v2",
 };
 
 const STOP_WORDS = new Set([
@@ -42,7 +42,70 @@ const STOP_WORDS = new Set([
   "yourselves", "kind", "tell"
 ]);
 
-// Simple pseudo-embedding generator for client-side semantic similarity
+// Clean starter collections with 0 initial memories
+export const defaultStarterCollections: Collection[] = [
+  {
+    id: "col-1",
+    user_id: "usr_00000000-0000-0000-0000-000000000001",
+    name: "Personal Notes",
+    description: "Daily thoughts, reflections, and personal journal entries.",
+    icon: "book-open",
+    accent_shade: "#8B5CF6",
+    color: "#8B5CF6",
+    is_smart: false,
+    filter_criteria: null,
+    memory_count: 0,
+    count: 0,
+    last_viewed_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "col-2",
+    user_id: "usr_00000000-0000-0000-0000-000000000001",
+    name: "Ideas & Projects",
+    description: "Breakthrough systems ideas, project roadmaps, and architecture notes.",
+    icon: "cpu",
+    accent_shade: "#3B82F6",
+    color: "#3B82F6",
+    is_smart: false,
+    filter_criteria: null,
+    memory_count: 0,
+    count: 0,
+    last_viewed_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "col-3",
+    user_id: "usr_00000000-0000-0000-0000-000000000001",
+    name: "Reading & Media",
+    description: "Book notes, articles, research papers, and media recommendations.",
+    icon: "compass",
+    accent_shade: "#A855F7",
+    color: "#A855F7",
+    is_smart: false,
+    filter_criteria: null,
+    memory_count: 0,
+    count: 0,
+    last_viewed_at: new Date().toISOString(),
+    created_at: new Date().toISOString(),
+  },
+];
+
+export const defaultCleanProfile: Profile = {
+  id: "usr_00000000-0000-0000-0000-000000000001",
+  email: "archivist@shadow.ai",
+  full_name: "Shadow Archivist",
+  avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+  bio: "Personal life archive vault.",
+  theme: "dark",
+  ai_auto_organize: true,
+  ai_auto_link: true,
+  default_privacy: "private",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+};
+
+// Deterministic pseudo-embedding generator
 export function generateDeterministicEmbedding(text: string): number[] {
   const words = text
     .toLowerCase()
@@ -64,7 +127,6 @@ export function generateDeterministicEmbedding(text: string): number[] {
     vector[bucket] += sign * (1 + 1 / (i + 1));
   }
 
-  // Normalize
   const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
   if (magnitude === 0) return vector;
   return vector.map((v) => v / magnitude);
@@ -89,7 +151,7 @@ class ShadowStore {
   private collections: Collection[] = [];
   private reminders: Reminder[] = [];
   private links: MemoryConnection[] = [];
-  private profile: Profile = initialProfile;
+  private profile: Profile = defaultCleanProfile;
   private initialized = false;
   private listeners: Set<() => void> = new Set();
 
@@ -97,11 +159,12 @@ class ShadowStore {
     if (typeof window !== "undefined") {
       this.init();
     } else {
-      this.memories = [...initialMemories];
-      this.collections = [...initialCollections];
-      this.reminders = [...initialReminders];
-      this.links = [...initialMemoryLinks];
-      this.profile = { ...initialProfile };
+      // Clean pristine default state
+      this.memories = [];
+      this.collections = [...defaultStarterCollections];
+      this.reminders = [];
+      this.links = [];
+      this.profile = { ...defaultCleanProfile };
     }
   }
 
@@ -115,25 +178,25 @@ class ShadowStore {
       const storedLinks = localStorage.getItem(STORAGE_KEYS.LINKS);
       const storedProfile = localStorage.getItem(STORAGE_KEYS.PROFILE);
 
-      this.memories = storedMemories ? JSON.parse(storedMemories) : [...initialMemories];
-      this.collections = storedCollections ? JSON.parse(storedCollections) : [...initialCollections];
-      this.reminders = storedReminders ? JSON.parse(storedReminders) : [...initialReminders];
-      this.links = storedLinks ? JSON.parse(storedLinks) : [...initialMemoryLinks];
-      this.profile = storedProfile ? JSON.parse(storedProfile) : { ...initialProfile };
-
-      if (!storedMemories) {
-        this.saveAll();
-      }
-    } catch {
-      this.memories = [...initialMemories];
-      this.collections = [...initialCollections];
-      this.reminders = [...initialReminders];
-      this.links = [...initialMemoryLinks];
+      // Clean default: empty arrays unless user has saved their own memories
+      this.memories = storedMemories ? JSON.parse(storedMemories) : [];
+      this.collections = storedCollections ? JSON.parse(storedCollections) : [...defaultStarterCollections];
+      this.reminders = storedReminders ? JSON.parse(storedReminders) : [];
+      this.links = storedLinks ? JSON.parse(storedLinks) : [];
+      this.profile = storedProfile ? JSON.parse(storedProfile) : { ...defaultCleanProfile };
+    } catch (e) {
+      console.warn("Could not load from localStorage, starting with clean memory archive", e);
+      this.memories = [];
+      this.collections = [...defaultStarterCollections];
+      this.reminders = [];
+      this.links = [];
+      this.profile = { ...defaultCleanProfile };
     }
+
     this.initialized = true;
   }
 
-  private saveAll() {
+  private save() {
     if (typeof window === "undefined") return;
     try {
       localStorage.setItem(STORAGE_KEYS.MEMORIES, JSON.stringify(this.memories));
@@ -142,7 +205,7 @@ class ShadowStore {
       localStorage.setItem(STORAGE_KEYS.LINKS, JSON.stringify(this.links));
       localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(this.profile));
     } catch (e) {
-      console.warn("Local storage write failed:", e);
+      console.error("Failed to save to localStorage:", e);
     }
     this.notify();
   }
@@ -158,552 +221,496 @@ class ShadowStore {
     };
   }
 
-  // --- MEMORIES ---
+  // --- MEMORIES CRUD ---
   public getMemories(): Memory[] {
-    this.init();
-    return [...this.memories].sort(
-      (a, b) => new Date(b.memory_date).getTime() - new Date(a.memory_date).getTime()
-    );
+    return [...this.memories];
   }
 
   public getMemory(id: string): Memory | undefined {
-    this.init();
     return this.memories.find((m) => m.id === id);
   }
 
-  public createMemory(data: Partial<Memory>): Memory {
-    this.init();
-    const id = `mem-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 6)}`;
+  public addMemory(memory: Omit<Memory, "id" | "created_at" | "updated_at">): Memory {
+    const id = `mem-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date().toISOString();
-
     const newMemory: Memory = {
+      ...memory,
       id,
-      user_id: this.profile.id,
-      title: data.title || "Untitled Memory",
-      description: data.description || data.content || "",
-      content: data.content || data.description || "",
-      summary: data.summary || data.ai_summary || data.content?.slice(0, 160) || "",
-      ai_summary: data.ai_summary || data.summary || data.content?.slice(0, 160) || "",
-      category: data.category || "Ideas & Projects",
-      sentiment: data.sentiment || "reflective",
-      memory_type: data.memory_type || "note",
-      source_type: data.source_type || data.memory_type || "note",
-      memory_date: data.memory_date || now,
-      is_pinned: Boolean(data.is_pinned),
-      is_favorite: Boolean(data.is_favorite),
-      location: data.location || data.location_name || null,
-      location_name: data.location_name || data.location || null,
-      location_coordinates: data.location_coordinates || null,
-      weather: data.weather || null,
-      tags: Array.isArray(data.tags) ? data.tags : [],
-      people: Array.isArray(data.people) ? data.people : [],
-      extracted_entities: data.extracted_entities || {
-        people: data.people || [],
-        places: data.location ? [data.location] : [],
-        dates: [],
-        topics: data.tags || [],
-        details: [],
-      },
-      attachments: data.attachments || [],
-      connections: [],
-      links: [],
-      collection_ids: data.collection_ids || [],
       created_at: now,
       updated_at: now,
+      is_pinned: memory.is_pinned ?? false,
+      is_favorite: memory.is_favorite ?? false,
+      extracted_entities: memory.extracted_entities || {
+        people: [],
+        places: [],
+        dates: [],
+        topics: [],
+        details: [],
+      },
+      connections: [],
     };
 
     this.memories.unshift(newMemory);
 
-    // Auto-discover links with existing memories based on shared people or tags
-    this.discoverAutoLinks(newMemory);
+    // Auto-discover links with existing memories
+    this.discoverLinksFor(newMemory);
 
-    this.saveAll();
+    this.save();
     return newMemory;
   }
 
+  public createMemory(memory: any): Memory {
+    return this.addMemory(memory);
+  }
+
   public updateMemory(id: string, updates: Partial<Memory>): Memory | undefined {
-    this.init();
     const index = this.memories.findIndex((m) => m.id === id);
     if (index === -1) return undefined;
 
-    const existing = this.memories[index];
-    const updated: Memory = {
-      ...existing,
+    this.memories[index] = {
+      ...this.memories[index],
       ...updates,
       updated_at: new Date().toISOString(),
     };
 
-    this.memories[index] = updated;
-    this.saveAll();
-    return updated;
+    this.save();
+    return this.memories[index];
   }
 
   public deleteMemory(id: string): boolean {
-    this.init();
-    const initialLen = this.memories.length;
+    const prevLen = this.memories.length;
     this.memories = this.memories.filter((m) => m.id !== id);
     this.links = this.links.filter(
       (l) => l.source_memory_id !== id && l.target_memory_id !== id
     );
     this.reminders = this.reminders.filter((r) => r.memory_id !== id);
 
-    if (this.memories.length !== initialLen) {
-      this.saveAll();
+    if (this.memories.length !== prevLen) {
+      this.save();
       return true;
     }
     return false;
   }
 
   public toggleFavorite(id: string): boolean {
-    const mem = this.getMemory(id);
-    if (!mem) return false;
-    this.updateMemory(id, { is_favorite: !mem.is_favorite });
-    return !mem.is_favorite;
+    const memory = this.getMemory(id);
+    if (memory) {
+      this.updateMemory(id, { is_favorite: !memory.is_favorite });
+      return true;
+    }
+    return false;
   }
 
   public togglePin(id: string): boolean {
-    const mem = this.getMemory(id);
-    if (!mem) return false;
-    this.updateMemory(id, { is_pinned: !mem.is_pinned });
-    return !mem.is_pinned;
+    const memory = this.getMemory(id);
+    if (memory) {
+      this.updateMemory(id, { is_pinned: !memory.is_pinned });
+      return true;
+    }
+    return false;
   }
 
   // --- AUTO-LINKING KNOWLEDGE GRAPH ---
-  private discoverAutoLinks(newMem: Memory) {
-    for (const mem of this.memories) {
-      if (mem.id === newMem.id) continue;
+  private discoverLinksFor(newMem: Memory) {
+    const existing = this.memories.filter((m) => m.id !== newMem.id);
+    const newText = `${newMem.title} ${newMem.content || ""} ${newMem.tags.join(" ")}`;
+    const newVec = generateDeterministicEmbedding(newText);
 
-      const sharedPeople = newMem.people.filter((p) => mem.people.includes(p));
-      const sharedTags = newMem.tags.filter((t) => mem.tags.includes(t));
+    for (const oldMem of existing) {
+      const oldText = `${oldMem.title} ${oldMem.content || ""} ${oldMem.tags.join(" ")}`;
+      const oldVec = generateDeterministicEmbedding(oldText);
+      const similarity = cosineSim(newVec, oldVec);
 
-      if (sharedPeople.length > 0) {
-        this.links.push({
-          id: `lnk-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
-          user_id: this.profile.id,
+      // Check for shared entities or high semantic similarity
+      const sharedTags = newMem.tags.filter((t) => oldMem.tags.includes(t));
+      const sharedPeople = (newMem.people || []).filter((p) =>
+        (oldMem.people || []).includes(p)
+      );
+
+      if (similarity > 0.45 || sharedTags.length > 0 || sharedPeople.length > 0) {
+        let reason = "Thematic conceptual similarity";
+        if (sharedPeople.length > 0) {
+          reason = `Both involve ${sharedPeople.join(", ")}`;
+        } else if (sharedTags.length > 0) {
+          reason = `Shared topics: #${sharedTags.join(", #")}`;
+        }
+
+        const link: MemoryConnection = {
+          id: `conn-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
           source_memory_id: newMem.id,
-          target_memory_id: mem.id,
-          link_type: "related",
-          similarity_score: 0.85,
-          confidence_score: 0.85,
-          reasoning: `Shared connection with ${sharedPeople.join(", ")}`,
-          connection_reason: `Shared connection with ${sharedPeople.join(", ")}`,
-          created_at: new Date().toISOString(),
-        });
-      } else if (sharedTags.length >= 2) {
-        this.links.push({
-          id: `lnk-${Date.now().toString(36)}-${Math.random().toString(36).substring(2, 5)}`,
-          user_id: this.profile.id,
-          source_memory_id: newMem.id,
-          target_memory_id: mem.id,
-          link_type: "related",
-          similarity_score: 0.75,
-          confidence_score: 0.75,
-          reasoning: `Thematic overlap across topics: ${sharedTags.join(", ")}`,
-          connection_reason: `Thematic overlap across topics: ${sharedTags.join(", ")}`,
-          created_at: new Date().toISOString(),
-        });
+          target_memory_id: oldMem.id,
+          similarity_score: Number(Math.max(similarity, 0.75).toFixed(2)),
+          connection_reason: reason,
+          target_memory: oldMem,
+        };
+
+        this.links.push(link);
       }
     }
   }
 
-  public getLinksForMemory(memoryId: string): (MemoryConnection & { connectedMemory: Memory })[] {
-    this.init();
-    const relevantLinks = this.links.filter(
+  public getConnectionsForMemory(memoryId: string): MemoryConnection[] {
+    return this.links.filter(
       (l) => l.source_memory_id === memoryId || l.target_memory_id === memoryId
     );
-
-    const result: (MemoryConnection & { connectedMemory: Memory })[] = [];
-    for (const link of relevantLinks) {
-      const targetId = link.source_memory_id === memoryId ? link.target_memory_id : link.source_memory_id;
-      const connectedMemory = this.getMemory(targetId);
-      if (connectedMemory) {
-        result.push({
-          ...link,
-          connectedMemory,
-        });
-      }
-    }
-    return result;
   }
 
-  // --- COLLECTIONS ---
-  public getCollections(): (Collection & { count: number })[] {
-    this.init();
-    return this.collections.map((col) => {
-      let count = 0;
-      if (col.is_smart && col.filter_criteria) {
-        count = this.memories.filter((m) => {
-          if (col.filter_criteria?.category && m.category !== col.filter_criteria.category) return false;
-          if (col.filter_criteria?.sentiment && m.sentiment !== col.filter_criteria.sentiment) return false;
-          if (col.filter_criteria?.people && col.filter_criteria.people.length > 0) {
-            const hasPerson = col.filter_criteria.people.some((p) => m.people.includes(p));
-            if (!hasPerson) return false;
-          }
-          if (col.filter_criteria?.tags && col.filter_criteria.tags.length > 0) {
-            const hasTag = col.filter_criteria.tags.some((t) => m.tags.includes(t));
-            if (!hasTag) return false;
-          }
-          return true;
-        }).length;
-      } else {
-        count = this.memories.filter((m) => m.collection_ids?.includes(col.id)).length;
-      }
+  public getLinksForMemory(memoryId: string): MemoryConnection[] {
+    return this.getConnectionsForMemory(memoryId);
+  }
 
+  // --- COLLECTIONS CRUD ---
+  public getCollections(): (Collection & { count: number })[] {
+    return this.collections.map((col) => {
+      const count = this.memories.filter((m) =>
+        m.collection_ids?.includes(col.id)
+      ).length;
       return {
         ...col,
-        count,
+        count: count,
+        memory_count: count,
       };
     });
   }
 
   public getCollection(id: string): Collection | undefined {
-    this.init();
     return this.collections.find((c) => c.id === id);
   }
 
-  public createCollection(data: Partial<Collection>): Collection {
-    this.init();
-    const id = `col-${Date.now().toString(36)}`;
-    const now = new Date().toISOString();
+  public createCollection(
+    dataOrName: Partial<Collection> | string,
+    description = "",
+    icon = "folder"
+  ): Collection {
+    const name =
+      typeof dataOrName === "string"
+        ? dataOrName
+        : dataOrName.name || "Untitled Collection";
+    const desc =
+      typeof dataOrName === "string"
+        ? description
+        : dataOrName.description || "";
+    const icn =
+      typeof dataOrName === "string" ? icon : dataOrName.icon || "folder";
+    const color =
+      typeof dataOrName === "object" && dataOrName.color
+        ? dataOrName.color
+        : "#8B5CF6";
 
-    const newCollection: Collection = {
-      id,
+    const newCol: Collection = {
+      id: `col-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       user_id: this.profile.id,
-      name: data.name || "New Collection",
-      description: data.description || "",
-      icon: data.icon || "folder",
-      accent_shade: data.accent_shade || data.color || "#8B5CF6",
-      color: data.color || data.accent_shade || "#8B5CF6",
-      is_smart: Boolean(data.is_smart),
-      filter_criteria: data.filter_criteria || null,
-      created_at: now,
-      updated_at: now,
+      name,
+      description: desc,
+      icon: icn,
+      accent_shade: color,
+      color: color,
+      is_smart: false,
+      filter_criteria:
+        typeof dataOrName === "object" ? dataOrName.filter_criteria : null,
+      memory_count: 0,
+      count: 0,
+      last_viewed_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
-
-    this.collections.push(newCollection);
-    this.saveAll();
-    return newCollection;
-  }
-
-  public updateCollection(id: string, updates: Partial<Collection>): Collection | undefined {
-    this.init();
-    const index = this.collections.findIndex((c) => c.id === id);
-    if (index === -1) return undefined;
-
-    this.collections[index] = {
-      ...this.collections[index],
-      ...updates,
-      updated_at: new Date().toISOString(),
-    };
-    this.saveAll();
-    return this.collections[index];
+    this.collections.push(newCol);
+    this.save();
+    return newCol;
   }
 
   public deleteCollection(id: string): boolean {
-    this.init();
-    const initialLen = this.collections.length;
+    const prevLen = this.collections.length;
     this.collections = this.collections.filter((c) => c.id !== id);
-    this.memories.forEach((m) => {
-      if (m.collection_ids) {
-        m.collection_ids = m.collection_ids.filter((cid) => cid !== id);
-      }
-    });
-
-    if (this.collections.length !== initialLen) {
-      this.saveAll();
+    if (this.collections.length !== prevLen) {
+      this.save();
       return true;
     }
     return false;
   }
 
-  // --- REMINDERS ---
+  // --- REMINDERS CRUD ---
   public getReminders(): Reminder[] {
-    this.init();
-    return [...this.reminders].sort(
-      (a, b) => new Date(a.remind_at || a.due_date).getTime() - new Date(b.remind_at || b.due_date).getTime()
-    );
+    return [...this.reminders];
   }
 
-  public createReminder(data: Partial<Reminder>): Reminder {
-    this.init();
-    const id = `rem-${Date.now().toString(36)}`;
+  public createReminder(reminder: {
+    title: string;
+    due_date?: string | null;
+    remind_at?: string | null;
+    reminder_type?: Reminder["reminder_type"];
+    recurrence?: Reminder["recurrence"];
+    recurrence_rule?: Reminder["recurrence"] | null;
+    memory_id?: string | null;
+    memory_title?: string | null;
+    notes?: string | null;
+  }): Reminder {
+    const due = reminder.due_date || reminder.remind_at || new Date().toISOString();
     const newReminder: Reminder = {
-      id,
+      id: `rem-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
       user_id: this.profile.id,
-      memory_id: data.memory_id || null,
-      title: data.title || "Untitled Reminder",
-      notes: data.notes || null,
-      remind_at: data.remind_at || data.due_date || new Date().toISOString(),
-      due_date: data.due_date || data.remind_at || new Date().toISOString(),
-      reminder_type: data.reminder_type || "custom",
-      recurrence: data.recurrence || data.recurrence_rule || "none",
-      recurrence_rule: data.recurrence_rule || data.recurrence || "none",
+      title: reminder.title,
+      due_date: due,
+      remind_at: due,
+      reminder_type: reminder.reminder_type || "custom",
+      recurrence: reminder.recurrence || reminder.recurrence_rule || "none",
+      recurrence_rule: reminder.recurrence || reminder.recurrence_rule || "none",
+      memory_id: reminder.memory_id ?? null,
+      memory_title: reminder.memory_title,
+      notes: reminder.notes ?? null,
       is_completed: false,
-      memory_title: data.memory_title,
       created_at: new Date().toISOString(),
     };
-
     this.reminders.push(newReminder);
-    this.saveAll();
+    this.save();
     return newReminder;
   }
 
   public toggleReminder(id: string): boolean {
-    this.init();
-    const reminder = this.reminders.find((r) => r.id === id);
-    if (!reminder) return false;
-    reminder.is_completed = !reminder.is_completed;
-    this.saveAll();
-    return reminder.is_completed;
-  }
-
-  public deleteReminder(id: string): boolean {
-    this.init();
-    const initialLen = this.reminders.length;
-    this.reminders = this.reminders.filter((r) => r.id !== id);
-    if (this.reminders.length !== initialLen) {
-      this.saveAll();
+    const rem = this.reminders.find((r) => r.id === id);
+    if (rem) {
+      rem.is_completed = !rem.is_completed;
+      this.save();
       return true;
     }
     return false;
   }
 
-  // --- SEARCH ENGINE & HYBRID RETRIEVAL ---
+  public deleteReminder(id: string): boolean {
+    const prev = this.reminders.length;
+    this.reminders = this.reminders.filter((r) => r.id !== id);
+    if (this.reminders.length !== prev) {
+      this.save();
+      return true;
+    }
+    return false;
+  }
+
+  // --- PROFILE ---
+  public getProfile(): Profile {
+    return { ...this.profile };
+  }
+
+  public updateProfile(updates: Partial<Profile>): Profile {
+    this.profile = {
+      ...this.profile,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    };
+    this.save();
+    return this.profile;
+  }
+
+  // --- DEMO / DATA MANAGEMENT (Clean & Reset) ---
+  public clearAllData(): void {
+    this.memories = [];
+    this.collections = [...defaultStarterCollections];
+    this.reminders = [];
+    this.links = [];
+    this.profile = { ...defaultCleanProfile };
+    this.save();
+  }
+
+  public clearArchive(): void {
+    this.clearAllData();
+  }
+
+  public loadSampleData(): void {
+    this.memories = [...initialMemories];
+    this.collections = [...initialCollections];
+    this.reminders = [...initialReminders];
+    this.links = [...initialMemoryLinks];
+    this.profile = { ...initialProfile };
+    this.save();
+  }
+
+  public resetToDefault(): void {
+    this.loadSampleData();
+  }
+
+  public exportData(): string {
+    return JSON.stringify(
+      {
+        version: "1.0",
+        exported_at: new Date().toISOString(),
+        profile: this.profile,
+        memories: this.memories,
+        collections: this.collections,
+        reminders: this.reminders,
+        connections: this.links,
+      },
+      null,
+      2
+    );
+  }
+
+  public importData(jsonString: string): { success: boolean; count: number } {
+    try {
+      const parsed = JSON.parse(jsonString);
+      const incomingMemories: Memory[] = Array.isArray(parsed)
+        ? parsed
+        : Array.isArray(parsed.memories)
+        ? parsed.memories
+        : [];
+
+      if (incomingMemories.length === 0) {
+        return { success: false, count: 0 };
+      }
+
+      this.memories = [...incomingMemories, ...this.memories];
+      if (parsed.profile) {
+        this.profile = { ...this.profile, ...parsed.profile };
+      }
+      if (Array.isArray(parsed.collections)) {
+        this.collections = [...this.collections, ...parsed.collections];
+      }
+      if (Array.isArray(parsed.reminders)) {
+        this.reminders = [...this.reminders, ...parsed.reminders];
+      }
+      this.save();
+      return { success: true, count: incomingMemories.length };
+    } catch (e) {
+      console.error("Failed to import archive JSON:", e);
+      return { success: false, count: 0 };
+    }
+  }
+
+  // --- SEARCH & RETRIEVAL ---
   public search(
-    queryText: string,
-    filters?: {
+    query: string,
+    options?: {
       category?: string;
+      memory_type?: string;
       sentiment?: string;
       tag?: string;
       person?: string;
       hasAttachments?: boolean;
     }
   ): SearchResult[] {
-    this.init();
-    const query = queryText.trim().toLowerCase();
-    const queryVector = query ? generateDeterministicEmbedding(query) : null;
-
-    let candidateMemories = this.memories;
-
-    if (filters?.category && filters.category !== "all") {
-      candidateMemories = candidateMemories.filter((m) => m.category === filters.category);
-    }
-    if (filters?.sentiment && filters.sentiment !== "all") {
-      candidateMemories = candidateMemories.filter((m) => m.sentiment === filters.sentiment);
-    }
-    if (filters?.tag) {
-      candidateMemories = candidateMemories.filter((m) => m.tags.includes(filters.tag!));
-    }
-    if (filters?.person) {
-      candidateMemories = candidateMemories.filter((m) => m.people.includes(filters.person!));
-    }
-    if (filters?.hasAttachments) {
-      candidateMemories = candidateMemories.filter((m) => m.attachments && m.attachments.length > 0);
-    }
-
-    if (!query) {
-      return candidateMemories.map((m) => ({
+    const q = query.trim().toLowerCase();
+    if (!q) {
+      return this.memories.map((m) => ({
         memory: m,
         similarity: 1.0,
-        match_reason: "Filter match",
-        highlighted_snippet: m.summary || m.content.slice(0, 150),
+        match_reason: "Recent archive record",
+        highlighted_snippet: m.summary || m.description || m.title,
+        score: 1.0,
+        explanation: "Recent archive record",
+        relevance_score: 1.0,
+        match_type: "exact",
+        match_explanation: "Recent archive record",
       }));
     }
 
+    const queryVec = generateDeterministicEmbedding(q);
     const results: SearchResult[] = [];
 
-    for (const mem of candidateMemories) {
-      const fullText = `${mem.title} ${mem.content} ${mem.summary} ${mem.tags.join(" ")} ${mem.people.join(" ")} ${mem.location_name || ""}`.toLowerCase();
+    for (const mem of this.memories) {
+      if (options?.category && options.category !== "all" && mem.category !== options.category) {
+        continue;
+      }
+      if (options?.memory_type && options.memory_type !== "all" && mem.memory_type !== options.memory_type) {
+        continue;
+      }
 
+      const fullText = `${mem.title} ${mem.content || ""} ${mem.summary || ""} ${mem.tags.join(" ")} ${mem.people.join(" ")} ${mem.location_name || ""}`.toLowerCase();
       let keywordScore = 0;
       const reasons: string[] = [];
 
-      if (fullText.includes(query)) {
+      if (mem.title.toLowerCase().includes(q)) {
+        keywordScore += 0.8;
+        reasons.push("Exact match in title");
+      }
+      if (mem.tags.some((t) => t.toLowerCase().includes(q))) {
         keywordScore += 0.6;
-        reasons.push(`Contains exact phrase "${query}"`);
+        reasons.push("Matched topic tag");
+      }
+      if (mem.people.some((p) => p.toLowerCase().includes(q))) {
+        keywordScore += 0.7;
+        reasons.push("Matched recorded person");
+      }
+      if (fullText.includes(q)) {
+        keywordScore += 0.4;
+        reasons.push("Appears in memory description");
       }
 
-      const queryTokens = query
-        .replace(/[^a-z0-9 ]/g, " ")
-        .split(/\s+/)
-        .filter((t) => t.length > 2 && !STOP_WORDS.has(t));
-      let matchedTokens = 0;
-      for (const token of queryTokens) {
-        if (mem.title.toLowerCase().includes(token)) {
-          matchedTokens++;
-          keywordScore += 0.4;
-          reasons.push(`Title matches "${token}"`);
-        } else if (mem.tags.some((t) => t.toLowerCase().includes(token))) {
-          matchedTokens++;
-          keywordScore += 0.35;
-          reasons.push(`Tag #${token}`);
-        } else if (mem.people.some((p) => p.toLowerCase().includes(token))) {
-          matchedTokens++;
-          keywordScore += 0.45;
-          reasons.push(`Person: ${token}`);
-        } else if (fullText.includes(token)) {
-          matchedTokens++;
-          keywordScore += 0.2;
-        }
-      }
+      const memVec = generateDeterministicEmbedding(fullText);
+      const vectorScore = cosineSim(queryVec, memVec);
 
-      let semanticScore = 0;
-      if (queryVector) {
-        const memVector = generateDeterministicEmbedding(fullText);
-        semanticScore = cosineSim(queryVector, memVector);
-      }
+      const finalScore = Number(Math.min(keywordScore + vectorScore * 0.5, 1.0).toFixed(2));
 
-      const combinedScore = Math.min(
-        1.0,
-        Math.max(0.0, keywordScore * 0.6 + semanticScore * 0.4)
-      );
-
-      if (reasons.length > 0 || (queryTokens.length > 0 && matchedTokens > 0) || semanticScore >= 0.5) {
-        const reasonText = reasons.length > 0
-          ? reasons.slice(0, 2).join(" • ")
-          : `Semantic match (${Math.round(semanticScore * 100)}%)`;
-
-        let snippet = mem.summary || mem.content.slice(0, 180);
-        const matchToken = queryTokens[0] || query;
-        const matchIndex = mem.content.toLowerCase().indexOf(matchToken);
-        if (matchIndex > -1) {
-          const start = Math.max(0, matchIndex - 60);
-          const end = Math.min(mem.content.length, matchIndex + 120);
-          snippet = (start > 0 ? "..." : "") + mem.content.substring(start, end) + (end < mem.content.length ? "..." : "");
-        }
-
+      if (finalScore > 0.15 || reasons.length > 0) {
         results.push({
           memory: mem,
-          similarity: Number(combinedScore.toFixed(3)),
-          match_reason: reasonText,
-          highlighted_snippet: snippet,
+          similarity: finalScore,
+          match_reason: reasons.length > 0 ? reasons.join(" • ") : "Semantic concept match",
+          highlighted_snippet: mem.summary || mem.description || mem.title,
+          score: finalScore,
+          explanation: reasons.length > 0 ? reasons.join(" • ") : "Semantic concept match",
+          relevance_score: finalScore,
+          match_type: reasons.length > 0 ? "keyword" : "semantic",
+          match_explanation: reasons.join(" • ") || "Semantic relevance match",
         });
       }
     }
 
-    return results.sort((a, b) => b.similarity - a.similarity);
+    return results.sort((a, b) => (b.score ?? b.similarity) - (a.score ?? a.similarity));
   }
 
   // --- STATS & REDISCOVER ---
   public getStats() {
-    this.init();
     const total = this.memories.length;
-    const favorites = this.memories.filter((m) => m.is_favorite).length;
     const pinned = this.memories.filter((m) => m.is_pinned).length;
-    const withAttachments = this.memories.filter((m) => m.attachments && m.attachments.length > 0).length;
+    const favorites = this.memories.filter((m) => m.is_favorite).length;
+    const withAttachments = this.memories.filter(
+      (m) => m.attachments && m.attachments.length > 0
+    ).length;
 
     const categoryCounts: Record<string, number> = {};
+    const typeCounts: Record<string, number> = {};
+    const sentimentCounts: Record<string, number> = {
+      positive: 0,
+      neutral: 0,
+      negative: 0,
+      reflective: 0,
+    };
+
     this.memories.forEach((m) => {
       categoryCounts[m.category] = (categoryCounts[m.category] || 0) + 1;
-    });
-
-    const sentimentCounts: Record<string, number> = {};
-    this.memories.forEach((m) => {
+      typeCounts[m.memory_type] = (typeCounts[m.memory_type] || 0) + 1;
       if (m.sentiment) {
         sentimentCounts[m.sentiment] = (sentimentCounts[m.sentiment] || 0) + 1;
       }
     });
 
-    const tagCounts: Record<string, number> = {};
-    this.memories.forEach((m) => {
-      m.tags.forEach((t) => {
-        tagCounts[t] = (tagCounts[t] || 0) + 1;
-      });
-    });
-
-    const topTags = Object.entries(tagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([tag, count]) => ({ tag, count }));
-
     return {
       total,
-      favorites,
       pinned,
+      favorites,
       withAttachments,
       categoryCounts,
+      typeCounts,
       sentimentCounts,
-      topTags,
     };
   }
 
   public getRediscoverMemory(): { memory: Memory; reflectionPrompt: string } | null {
-    this.init();
     if (this.memories.length === 0) return null;
-
-    const eligible = this.memories.filter((m) => m.sentiment === "reflective" || m.is_favorite);
-    const pool = eligible.length > 0 ? eligible : this.memories;
-    const index = Math.floor(Math.random() * pool.length);
-    const memory = pool[index];
+    const candidates = this.memories.filter((m) => m.is_pinned || m.is_favorite);
+    const chosen = candidates.length > 0
+      ? candidates[Math.floor(Math.random() * candidates.length)]
+      : this.memories[Math.floor(Math.random() * this.memories.length)];
 
     const prompts = [
-      `How has your perspective on this moment evolved since you captured it?`,
-      `Does this insight still hold true for you today, or has experience reshaped it?`,
-      `What was the quietest feeling in the room when this happened?`,
-      `If you could revisit this conversation or place today, what would you notice first?`,
+      "How has your perspective evolved since this moment was recorded?",
+      "What action or gratitude does this memory spark for you today?",
+      "Who might appreciate hearing about this milestone?",
+      "What principle from this experience can you apply to your current work?",
     ];
-    const reflectionPrompt = prompts[Math.floor(Math.random() * prompts.length)];
 
-    return { memory, reflectionPrompt };
-  }
-
-  // --- PROFILE ---
-  public getProfile(): Profile {
-    this.init();
-    return this.profile;
-  }
-
-  public updateProfile(updates: Partial<Profile>): Profile {
-    this.init();
-    this.profile = {
-      ...this.profile,
-      ...updates,
-      updated_at: new Date().toISOString(),
+    return {
+      memory: chosen,
+      reflectionPrompt: prompts[Math.floor(Math.random() * prompts.length)],
     };
-    this.saveAll();
-    return this.profile;
-  }
-
-  // --- IMPORT / EXPORT ARCHIVE ---
-  public exportData(): string {
-    this.init();
-    const data = {
-      version: "1.0",
-      exported_at: new Date().toISOString(),
-      profile: this.profile,
-      memories: this.memories,
-      collections: this.collections,
-      reminders: this.reminders,
-      links: this.links,
-    };
-    return JSON.stringify(data, null, 2);
-  }
-
-  public importData(jsonString: string): { success: boolean; count: number } {
-    try {
-      const parsed = JSON.parse(jsonString);
-      if (Array.isArray(parsed.memories)) {
-        this.memories = parsed.memories;
-        if (Array.isArray(parsed.collections)) this.collections = parsed.collections;
-        if (Array.isArray(parsed.reminders)) this.reminders = parsed.reminders;
-        if (Array.isArray(parsed.links)) this.links = parsed.links;
-        if (parsed.profile) this.profile = parsed.profile;
-        this.saveAll();
-        return { success: true, count: this.memories.length };
-      }
-      return { success: false, count: 0 };
-    } catch {
-      return { success: false, count: 0 };
-    }
-  }
-
-  public resetToDefault() {
-    this.memories = [...initialMemories];
-    this.collections = [...initialCollections];
-    this.reminders = [...initialReminders];
-    this.links = [...initialMemoryLinks];
-    this.profile = { ...initialProfile };
-    this.saveAll();
   }
 }
 

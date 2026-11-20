@@ -37,7 +37,7 @@ export function MemoryStatsChart() {
     }).length;
     return {
       date: label,
-      captures: memsOnDate || (i === 13 ? 2 : i === 11 ? 3 : i === 8 ? 1 : i === 5 ? 2 : i === 2 ? 1 : 0),
+      captures: memsOnDate,
     };
   });
 

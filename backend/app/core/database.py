@@ -402,12 +402,53 @@ INITIAL_REMINDERS = [
 
 class MemoryRepository:
     def __init__(self):
-        self.memories: Dict[str, MemoryResponse] = {m.id: m for m in INITIAL_MEMORIES}
-        self.collections: Dict[str, CollectionResponse] = {c.id: c for c in INITIAL_COLLECTIONS}
-        self.reminders: Dict[str, ReminderResponse] = {r.id: r for r in INITIAL_REMINDERS}
+        # Pristine clean repository with zero dummy memories
+        self.memories: Dict[str, MemoryResponse] = {}
+        self.collections: Dict[str, CollectionResponse] = {
+            "col-1": CollectionResponse(
+                id="col-1",
+                user_id=INITIAL_PROFILE.id,
+                name="Personal Notes",
+                description="Daily thoughts, reflections, and personal journal entries.",
+                icon="book-open",
+                accent_shade="#8B5CF6",
+                memory_count=0,
+                last_viewed_at=datetime.utcnow(),
+                created_at=datetime.utcnow(),
+            ),
+            "col-2": CollectionResponse(
+                id="col-2",
+                user_id=INITIAL_PROFILE.id,
+                name="Ideas & Projects",
+                description="Breakthrough systems ideas, project roadmaps, and architecture notes.",
+                icon="cpu",
+                accent_shade="#3B82F6",
+                memory_count=0,
+                last_viewed_at=datetime.utcnow(),
+                created_at=datetime.utcnow(),
+            ),
+            "col-3": CollectionResponse(
+                id="col-3",
+                user_id=INITIAL_PROFILE.id,
+                name="Reading & Media",
+                description="Book notes, articles, research papers, and media recommendations.",
+                icon="compass",
+                accent_shade="#A855F7",
+                memory_count=0,
+                last_viewed_at=datetime.utcnow(),
+                created_at=datetime.utcnow(),
+            ),
+        }
+        self.reminders: Dict[str, ReminderResponse] = {}
         self.profile: UserProfile = INITIAL_PROFILE
 
-        # Initial link discovery
+    def clear_all_data(self):
+        self.memories.clear()
+        self.reminders.clear()
+
+    def load_sample_data(self):
+        self.memories = {m.id: m for m in INITIAL_MEMORIES}
+        self.reminders = {r.id: r for r in INITIAL_REMINDERS}
         for m in self.memories.values():
             m.connections = discover_memory_links(m, list(self.memories.values()))
 

@@ -1,21 +1,31 @@
 "use client";
 
 import { shadowStore } from "@/lib/storage/store";
+import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
   Bell,
-  BookOpen,
+  Bot,
+  Brain,
   Calendar,
-  Compass,
+  ChevronDown,
+  Cpu,
   FolderKanban,
+  HardDrive,
   History,
   LayoutDashboard,
+  Lock,
+  LogOut,
+  Mic,
   Plus,
+  Radio,
   Search,
   Settings,
+  ShieldCheck,
   Sparkles,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 
 interface SidebarProps {
@@ -24,121 +34,351 @@ interface SidebarProps {
 
 export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [memoryCount, setMemoryCount] = useState(0);
+  const [reminderCount, setReminderCount] = useState(0);
+  const [profile, setProfile] = useState(() => shadowStore.getProfile());
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [isModelsExpanded, setIsModelsExpanded] = useState(true);
 
   useEffect(() => {
     const update = () => {
       setMemoryCount(shadowStore.getMemories().length);
+      setReminderCount(shadowStore.getReminders().filter((r) => !r.is_completed).length);
+      setProfile(shadowStore.getProfile());
     };
     update();
     return shadowStore.subscribe(update);
   }, []);
 
-  const navLinks = [
-    { href: "/", label: "Dashboard", icon: LayoutDashboard },
-    { href: "/memories", label: "Memories", icon: History, count: memoryCount },
-    { href: "/search", label: "Search & AI Chat", icon: Search },
-    { href: "/timeline", label: "Timeline", icon: Calendar },
-    { href: "/collections", label: "Collections", icon: FolderKanban },
-    { href: "/reminders", label: "Reminders", icon: Bell },
-    { href: "/settings", label: "Settings", icon: Settings },
+  const handleLogout = async () => {
+    if (isSupabaseConfigured()) {
+      try {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn("Supabase sign out error:", err);
+      }
+    }
+    setShowLogoutModal(false);
+    router.push("/login");
+  };
+
+  interface NavItem {
+    href: string;
+    label: string;
+    icon: any;
+    count?: number;
+    badge?: string;
+  }
+
+  interface NavSection {
+    title: string;
+    items: NavItem[];
+  }
+
+  const navSections: NavSection[] = [
+    {
+      title: "WORKSPACE",
+      items: [
+        { href: "/", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/memories", label: "All Memories", icon: History, count: memoryCount },
+        { href: "/search", label: "Search & AI Chat", icon: Search, badge: "⌘F" },
+        { href: "/timeline", label: "Timeline", icon: Calendar, badge: "Stream" },
+      ],
+    },
+    {
+      title: "ORGANIZATION",
+      items: [
+        { href: "/collections", label: "Collections", icon: FolderKanban },
+        { href: "/reminders", label: "Reminders & Birthdays", icon: Bell, count: reminderCount > 0 ? reminderCount : undefined },
+      ],
+    },
+  ];
+
+  const models = [
+    {
+      name: "GPT-4o-mini",
+      role: "Structured Extraction & Vision OCR",
+      status: "ACTIVE",
+      color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+    },
+    {
+      name: "Whisper-1",
+      role: "Neural Voice Transcription",
+      status: "READY",
+      color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/30",
+    },
+    {
+      name: "text-embedding-3",
+      role: "1536-dim Vector HNSW Indexing",
+      status: "INDEXED",
+      color: "text-purple-400 bg-purple-500/10 border-purple-500/30",
+    },
   ];
 
   return (
-    <aside className="hidden md:flex flex-col w-64 border-r border-[#222034] bg-[#0c0b14]/90 backdrop-blur-xl h-screen sticky top-0 z-40 select-none">
-      {/* Brand Header */}
-      <div className="p-5 border-b border-[#201e30]">
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-600 to-violet-800 flex items-center justify-center border border-purple-400/40 shadow-[0_0_15px_rgba(168,85,247,0.4)] group-hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all">
-            <span className="font-mono-retro font-bold text-white text-base tracking-tighter">Ψ</span>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-mono-retro font-bold text-base tracking-wider text-white">
-                SHADOW
-              </span>
-              <span className="text-[10px] font-mono-retro px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-400 border border-purple-800/60">
-                v1.0
-              </span>
+    <>
+      <aside className="hidden md:flex flex-col w-64 border-r border-[#222034] bg-[#0c0b14]/95 backdrop-blur-xl h-screen sticky top-0 z-40 select-none overflow-hidden">
+        {/* Brand Header */}
+        <div className="p-4 border-b border-[#201e30]">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-violet-800 flex items-center justify-center border border-purple-400/40 shadow-[0_0_15px_rgba(168,85,247,0.4)] group-hover:shadow-[0_0_20px_rgba(168,85,247,0.6)] transition-all flex-shrink-0">
+              <span className="font-mono-retro font-bold text-white text-base tracking-tighter">Ψ</span>
             </div>
-            <p className="text-[11px] text-gray-400 font-medium tracking-tight">Your life, remembered.</p>
-          </div>
-        </Link>
-      </div>
-
-      {/* System Status Pill */}
-      <div className="px-5 py-2.5 bg-[#090810] border-b border-[#1b1928] flex items-center justify-between text-[11px] font-mono-retro text-gray-400">
-        <span className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-emerald-400/90 font-medium">SYS: ONLINE</span>
-        </span>
-        <span className="text-purple-400/80">[GROUNDED]</span>
-      </div>
-
-      {/* Quick Add CTA */}
-      <div className="p-4">
-        <button
-          onClick={onOpenQuickAdd}
-          className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-lg bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-sm transition-all shadow-[0_0_20px_rgba(147,51,234,0.35)] hover:shadow-[0_0_25px_rgba(147,51,234,0.5)] border border-purple-400/30 active:scale-[0.98]"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Capture Memory</span>
-        </button>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
-        {navLinks.map((link) => {
-          const Icon = link.icon;
-          const isActive = pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href));
-
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all group ${
-                isActive
-                  ? "bg-purple-900/30 text-purple-200 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)]"
-                  : "text-gray-400 hover:text-gray-100 hover:bg-[#161524] border border-transparent"
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Icon
-                  className={`w-4 h-4 transition-colors ${
-                    isActive ? "text-purple-400" : "text-gray-400 group-hover:text-purple-300"
-                  }`}
-                />
-                <span>{link.label}</span>
-              </div>
-              {link.count !== undefined && (
-                <span
-                  className={`text-xs px-2 py-0.5 rounded-full font-mono-retro ${
-                    isActive
-                      ? "bg-purple-800/60 text-purple-300"
-                      : "bg-[#181628] text-gray-400 group-hover:text-gray-300"
-                  }`}
-                >
-                  {link.count}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-mono-retro font-bold text-base tracking-wider text-white">
+                  SHADOW
                 </span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Bottom Profile Footer */}
-      <div className="p-4 border-t border-[#1e1c2e] bg-[#090810]/60">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-purple-900/60 border border-purple-500/40 flex items-center justify-center font-mono-retro text-xs font-semibold text-purple-300">
-            KV
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-200 truncate">Kaelen Vance</p>
-            <p className="text-[10px] text-gray-400 font-mono-retro truncate">archivist@shadow.ai</p>
-          </div>
-          <div className="w-2 h-2 rounded-full bg-purple-500/80 shadow-[0_0_8px_#a855f7]" />
+                <span className="text-[10px] font-mono-retro px-1.5 py-0.5 rounded bg-purple-950/80 text-purple-400 border border-purple-800/60">
+                  v1.0
+                </span>
+              </div>
+              <p className="text-[11px] text-[#8E8AA6] font-medium tracking-tight truncate">
+                Your life, remembered.
+              </p>
+            </div>
+          </Link>
         </div>
-      </div>
-    </aside>
+
+        {/* System Status Banner */}
+        <div className="px-4 py-2 bg-[#08070e] border-b border-[#1b1928] flex items-center justify-between text-[10px] font-mono-retro text-gray-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-emerald-400/90 font-medium">SYS: ONLINE</span>
+          </span>
+          <span className="text-purple-400/90 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3 text-purple-400" />
+            <span>GROUNDED</span>
+          </span>
+        </div>
+
+        {/* Quick Add CTA Button */}
+        <div className="p-3">
+          <button
+            onClick={onOpenQuickAdd}
+            className="w-full flex items-center justify-between py-2 px-3.5 rounded-xl bg-gradient-to-r from-purple-600 via-purple-700 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs transition-all shadow-[0_0_18px_rgba(147,51,234,0.3)] hover:shadow-[0_0_24px_rgba(147,51,234,0.5)] border border-purple-400/30 active:scale-[0.98] group"
+          >
+            <div className="flex items-center gap-2">
+              <Plus className="w-3.5 h-3.5 group-hover:rotate-90 transition-transform" />
+              <span>Capture Memory</span>
+            </div>
+            <kbd className="px-1.5 py-0.5 text-[9px] font-mono-retro bg-purple-950/80 rounded border border-purple-400/30 text-purple-200">
+              ⌘K
+            </kbd>
+          </button>
+        </div>
+
+        {/* Scrollable Navigation Body */}
+        <div className="flex-1 px-3 py-1 space-y-4 overflow-y-auto custom-scrollbar">
+          {/* Main Navigation Sections */}
+          {navSections.map((section) => (
+            <div key={section.title} className="space-y-1">
+              <p className="px-3 text-[10px] font-mono-retro font-semibold tracking-wider text-[#5C5873] uppercase">
+                {section.title}
+              </p>
+              <div className="space-y-0.5">
+                {section.items.map((link) => {
+                  const Icon = link.icon;
+                  const isActive =
+                    pathname === link.href ||
+                    (link.href !== "/" && pathname.startsWith(link.href));
+
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all group ${
+                        isActive
+                          ? "bg-purple-900/30 text-purple-200 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)]"
+                          : "text-[#8E8AA6] hover:text-[#F4F3F8] hover:bg-[#161524] border border-transparent"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <Icon
+                          className={`w-3.5 h-3.5 transition-colors ${
+                            isActive
+                              ? "text-purple-400"
+                              : "text-[#8E8AA6] group-hover:text-purple-300"
+                          }`}
+                        />
+                        <span>{link.label}</span>
+                      </div>
+                      {link.count !== undefined && (
+                        <span
+                          className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono-retro ${
+                            isActive
+                              ? "bg-purple-800/60 text-purple-300"
+                              : "bg-[#181628] text-[#8E8AA6] group-hover:text-gray-300"
+                          }`}
+                        >
+                          {link.count}
+                        </span>
+                      )}
+                      {link.badge && link.count === undefined && (
+                        <span className="text-[9px] font-mono-retro text-[#5C5873] group-hover:text-[#8E8AA6]">
+                          {link.badge}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* AI Engines & Models Section */}
+          <div className="space-y-1.5 pt-1">
+            <button
+              onClick={() => setIsModelsExpanded(!isModelsExpanded)}
+              className="w-full flex items-center justify-between px-3 text-[10px] font-mono-retro font-semibold tracking-wider text-[#5C5873] uppercase hover:text-[#8E8AA6] transition-colors"
+            >
+              <span className="flex items-center gap-1.5">
+                <Brain className="w-3 h-3 text-purple-400" />
+                <span>AI ENGINES & MODELS</span>
+              </span>
+              <ChevronDown
+                className={`w-3 h-3 transition-transform ${
+                  isModelsExpanded ? "rotate-0" : "-rotate-90"
+                }`}
+              />
+            </button>
+
+            {isModelsExpanded && (
+              <div className="space-y-1 px-1">
+                {models.map((m) => (
+                  <div
+                    key={m.name}
+                    className="p-2 rounded-lg bg-[#0E0D18] border border-[#1E1C2E] hover:border-purple-500/30 transition-all text-[11px]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono-retro font-medium text-gray-200">
+                        {m.name}
+                      </span>
+                      <span
+                        className={`text-[9px] font-mono-retro px-1.5 py-0.2 rounded border ${m.color}`}
+                      >
+                        {m.status}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-[#8E8AA6] truncate mt-0.5 font-sans">
+                      {m.role}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* System & Settings Section */}
+          <div className="space-y-1 pt-1">
+            <p className="px-3 text-[10px] font-mono-retro font-semibold tracking-wider text-[#5C5873] uppercase">
+              SYSTEM & VAULT
+            </p>
+            <div className="space-y-0.5">
+              <Link
+                href="/settings"
+                className={`flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium transition-all group ${
+                  pathname === "/settings"
+                    ? "bg-purple-900/30 text-purple-200 border border-purple-500/30 shadow-[0_0_12px_rgba(168,85,247,0.15)]"
+                    : "text-[#8E8AA6] hover:text-[#F4F3F8] hover:bg-[#161524] border border-transparent"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <Settings
+                    className={`w-3.5 h-3.5 transition-colors ${
+                      pathname === "/settings"
+                        ? "text-purple-400"
+                        : "text-[#8E8AA6] group-hover:text-purple-300"
+                    }`}
+                  />
+                  <span>Settings & Privacy</span>
+                </div>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Profile & Log Out Footer */}
+        <div className="p-3 border-t border-[#1e1c2e] bg-[#090810]/80 space-y-2">
+          {/* User Profile Info Card */}
+          <div className="flex items-center gap-2.5 px-2 py-1.5 rounded-lg bg-[#12111D] border border-[#201e30]">
+            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-700 to-indigo-600 border border-purple-400/40 flex items-center justify-center font-mono-retro text-[11px] font-semibold text-white flex-shrink-0">
+              {profile.full_name
+                ? profile.full_name
+                    .split(" ")
+                    .map((n) => n[0])
+                    .join("")
+                    .slice(0, 2)
+                    .toUpperCase()
+                : "SA"}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-gray-200 truncate">
+                {profile.full_name || "Shadow Archivist"}
+              </p>
+              <p className="text-[10px] text-[#8E8AA6] font-mono-retro truncate">
+                {profile.email || "archivist@shadow.ai"}
+              </p>
+            </div>
+            <span className="text-[9px] font-mono-retro text-purple-400 bg-purple-950/80 px-1.5 py-0.5 rounded border border-purple-800/40">
+              OWNER
+            </span>
+          </div>
+
+          {/* Log Out Button */}
+          <button
+            onClick={() => setShowLogoutModal(true)}
+            className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-mono-retro text-red-400/80 hover:text-red-300 hover:bg-red-950/30 border border-transparent hover:border-red-900/40 transition-all active:scale-[0.98]"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out Vault</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Log Out Confirmation Modal */}
+      {showLogoutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-sm rounded-2xl bg-[#0E0D18] border border-[#2E2A44] p-5 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-950/60 border border-red-800/50 flex items-center justify-center text-red-400">
+                <LogOut className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-[#F4F3F8]">
+                  Lock & Sign Out
+                </h3>
+                <p className="text-xs text-[#8E8AA6]">
+                  Are you sure you want to exit your vault session?
+                </p>
+              </div>
+            </div>
+
+            <p className="text-xs text-[#8E8AA6] bg-[#141224] p-3 rounded-xl border border-[#252238] font-mono-retro text-[11px]">
+              Your stored memories and vector embeddings remain securely preserved.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowLogoutModal(false)}
+                className="px-3 py-1.5 rounded-lg text-xs text-[#8E8AA6] hover:text-[#F4F3F8] hover:bg-[#191926] transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="px-3.5 py-1.5 rounded-lg text-xs font-medium bg-red-600 hover:bg-red-500 text-white shadow-[0_0_12px_rgba(239,68,68,0.35)] transition-all"
+              >
+                Confirm Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

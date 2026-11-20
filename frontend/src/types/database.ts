@@ -170,7 +170,7 @@ export interface Reminder {
   recurrence: RecurrenceRule;
   recurrence_rule?: RecurrenceRule | null; // alias
   is_completed: boolean;
-  memory_title?: string;
+  memory_title?: string | null;
   created_at: string;
 }
 
@@ -179,6 +179,11 @@ export interface SearchResult {
   similarity: number;
   match_reason: string;
   highlighted_snippet: string;
+  score?: number;
+  explanation?: string;
+  relevance_score?: number;
+  match_type?: string;
+  match_explanation?: string;
 }
 
 export interface MemoryCitation {

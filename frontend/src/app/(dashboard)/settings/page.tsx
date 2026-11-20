@@ -82,6 +82,14 @@ export default function SettingsPage() {
     reader.readAsText(file);
   };
 
+  const handleClearArchive = () => {
+    if (confirm("Are you sure you want to completely clear your memory archive? This will remove all memories and leave your vault in a pristine clean state.")) {
+      shadowStore.clearAllData();
+      setProfile(shadowStore.getProfile());
+      alert("Memory archive cleared. Vault is now in a pristine clean state.");
+    }
+  };
+
   const handleResetToDefault = () => {
     if (confirm("Reset archive to initial seed memories? Your current changes will be overwritten.")) {
       shadowStore.resetToDefault();
@@ -340,11 +348,19 @@ export default function SettingsPage() {
           </button>
 
           <button
+            onClick={handleClearArchive}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-950/40 hover:bg-red-950/70 text-red-300 border border-red-900/50 text-xs font-mono-retro transition-colors"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>Clear Archive (Pristine State)</span>
+          </button>
+
+          <button
             onClick={handleResetToDefault}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-950/30 hover:bg-rose-950/60 text-rose-300 border border-rose-900/40 text-xs font-mono-retro transition-colors ml-auto"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-950/30 hover:bg-purple-950/60 text-purple-300 border border-purple-900/40 text-xs font-mono-retro transition-colors ml-auto"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            <span>Reset to Curated Sample Vault</span>
+            <span>Load Curated Sample Vault</span>
           </button>
         </div>
       </div>

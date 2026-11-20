@@ -267,6 +267,23 @@ export default function AllMemoriesPage() {
             />
           ))}
         </div>
+      ) : memories.length === 0 ? (
+        <div className="p-16 text-center rounded-2xl bg-[#0C0C12] border border-dashed border-[#252238] space-y-4 shadow-xl">
+          <div className="w-14 h-14 mx-auto rounded-2xl bg-purple-950/40 border border-purple-800/40 flex items-center justify-center text-[#8B5CF6]">
+            <Sparkles className="w-7 h-7" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold text-[#F4F3F8]">
+              Your Memory Archive is Pristine
+            </h3>
+            <p className="text-xs text-[#8E8AA6] max-w-md mx-auto">
+              No moments recorded yet. Capture thoughts, documents, photos, voice notes, conversations, or milestones with automatic AI extraction.
+            </p>
+          </div>
+          <p className="text-xs font-mono-retro text-purple-400">
+            Press <kbd className="px-1.5 py-0.5 rounded bg-[#191926] border border-[#252238] text-purple-300">⌘K</kbd> to capture your first memory
+          </p>
+        </div>
       ) : (
         <div className="p-16 text-center rounded-2xl bg-[#0C0C12] border border-[#252238] space-y-3">
           <p className="text-sm font-mono-retro text-[#8E8AA6]">

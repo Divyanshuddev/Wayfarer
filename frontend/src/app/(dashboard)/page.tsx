@@ -115,10 +115,10 @@ export default function DashboardHomePage() {
             Try asking:
           </span>
           {[
-            "What did Rahul recommend?",
-            "Show my startup ideas",
-            "What did I do last weekend?",
-            "Notes on Alain de Botton",
+            "Summarize my recent thoughts",
+            "Show my project milestones",
+            "What did we discuss in the last meeting?",
+            "Find my travel memories",
           ].map((pill, idx) => (
             <button
               key={idx}
@@ -250,16 +250,43 @@ export default function DashboardHomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {recentMemories.map((m) => (
-              <MemoryCard
-                key={m.id}
-                memory={m}
-                onToggleFavorite={(id) => shadowStore.toggleFavorite(id)}
-                onTogglePin={(id) => shadowStore.togglePin(id)}
-              />
-            ))}
-          </div>
+          {recentMemories.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {recentMemories.map((m) => (
+                <MemoryCard
+                  key={m.id}
+                  memory={m}
+                  onToggleFavorite={(id) => shadowStore.toggleFavorite(id)}
+                  onTogglePin={(id) => shadowStore.togglePin(id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 rounded-2xl bg-[#0C0C12] border border-dashed border-[#252238] flex flex-col items-center justify-center text-center space-y-3 shadow-lg">
+              <div className="w-12 h-12 rounded-2xl bg-purple-950/40 border border-purple-800/40 flex items-center justify-center text-[#8B5CF6]">
+                <Sparkles className="w-6 h-6" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-sm font-semibold text-[#F4F3F8]">
+                  Your Memory Vault is Ready
+                </h3>
+                <p className="text-xs text-[#8E8AA6] max-w-sm">
+                  No memories recorded yet. Press{" "}
+                  <kbd className="px-1.5 py-0.5 rounded bg-[#191926] font-mono-retro text-purple-300 border border-[#252238]">
+                    ⌘K
+                  </kbd>{" "}
+                  anywhere or capture your first note, photo, voice recording, or document.
+                </p>
+              </div>
+              <Link
+                href="/memories"
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#8B5CF6] hover:bg-purple-500 text-white text-xs font-medium shadow-[0_0_15px_rgba(139,92,246,0.35)] transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Capture First Memory</span>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Upcoming Reminders (1 column on lg) */}
