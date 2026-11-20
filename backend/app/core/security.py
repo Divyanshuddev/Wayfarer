@@ -3,7 +3,10 @@ import jwt
 from fastapi import Depends, HTTPException, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel
-from app.core.config import settings
+try:
+    from app.core.config import settings
+except ImportError:
+    from backend.app.core.config import settings
 
 security_bearer = HTTPBearer(auto_error=False)
 

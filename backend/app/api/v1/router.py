@@ -1,13 +1,24 @@
 from fastapi import APIRouter
-from app.api.v1 import (
-    chat,
-    collections,
-    dashboard,
-    memories,
-    reminders,
-    search,
-    settings,
-)
+try:
+    from app.api.v1 import (
+        chat,
+        collections,
+        dashboard,
+        memories,
+        reminders,
+        search,
+        settings,
+    )
+except ImportError:
+    from backend.app.api.v1 import (
+        chat,
+        collections,
+        dashboard,
+        memories,
+        reminders,
+        search,
+        settings,
+    )
 
 api_router = APIRouter()
 

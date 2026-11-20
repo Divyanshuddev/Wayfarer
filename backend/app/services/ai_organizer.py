@@ -2,8 +2,12 @@ import json
 import re
 from datetime import datetime
 from typing import List, Optional
-from app.core.openai_client import get_openai_client
-from app.schemas.memory import AIExtractionOutput, ExtractedEntities, MemoryCategory
+try:
+    from app.core.openai_client import get_openai_client
+    from app.schemas.memory import AIExtractionOutput, ExtractedEntities, MemoryCategory
+except ImportError:
+    from backend.app.core.openai_client import get_openai_client
+    from backend.app.schemas.memory import AIExtractionOutput, ExtractedEntities, MemoryCategory
 
 
 def extract_entities_heuristic(text: str) -> AIExtractionOutput:

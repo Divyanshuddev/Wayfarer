@@ -1,25 +1,46 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 import uuid
-from app.core.config import settings
-from app.schemas.collections_reminders import (
-    CollectionResponse,
-    ReminderResponse,
-    ReminderType,
-    RecurrenceRule,
-    UserProfile,
-)
-from app.schemas.memory import (
-    ExtractedEntities,
-    MemoryAttachment,
-    MemoryCategory,
-    MemoryConnection,
-    MemoryCreate,
-    MemoryResponse,
-    MemoryType,
-    PrivacyLevel,
-)
-from app.services.embedding_service import discover_memory_links
+try:
+    from app.core.config import settings
+    from app.schemas.collections_reminders import (
+        CollectionResponse,
+        ReminderResponse,
+        ReminderType,
+        RecurrenceRule,
+        UserProfile,
+    )
+    from app.schemas.memory import (
+        ExtractedEntities,
+        MemoryAttachment,
+        MemoryCategory,
+        MemoryConnection,
+        MemoryCreate,
+        MemoryResponse,
+        MemoryType,
+        PrivacyLevel,
+    )
+    from app.services.embedding_service import discover_memory_links
+except ImportError:
+    from backend.app.core.config import settings
+    from backend.app.schemas.collections_reminders import (
+        CollectionResponse,
+        ReminderResponse,
+        ReminderType,
+        RecurrenceRule,
+        UserProfile,
+    )
+    from backend.app.schemas.memory import (
+        ExtractedEntities,
+        MemoryAttachment,
+        MemoryCategory,
+        MemoryConnection,
+        MemoryCreate,
+        MemoryResponse,
+        MemoryType,
+        PrivacyLevel,
+    )
+    from backend.app.services.embedding_service import discover_memory_links
 
 # Initial seed profile
 INITIAL_PROFILE = UserProfile(

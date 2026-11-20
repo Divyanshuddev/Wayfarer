@@ -240,9 +240,8 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleToggleAutoOrganize}
-              className={`p-1 text-xs font-mono-retro rounded transition-colors ${
-                profile.ai_auto_organize ? "text-[#C084FC]" : "text-[#5C5873]"
-              }`}
+              className={`p-1 text-xs font-mono-retro rounded transition-colors ${profile.ai_auto_organize ? "text-[#C084FC]" : "text-[#5C5873]"
+                }`}
             >
               {profile.ai_auto_organize ? (
                 <ToggleRight className="w-6 h-6 fill-purple-600 text-[#C084FC]" />
@@ -262,9 +261,8 @@ export default function SettingsPage() {
             </div>
             <button
               onClick={handleToggleAutoLink}
-              className={`p-1 text-xs font-mono-retro rounded transition-colors ${
-                profile.ai_auto_link ? "text-[#C084FC]" : "text-[#5C5873]"
-              }`}
+              className={`p-1 text-xs font-mono-retro rounded transition-colors ${profile.ai_auto_link ? "text-[#C084FC]" : "text-[#5C5873]"
+                }`}
             >
               {profile.ai_auto_link ? (
                 <ToggleRight className="w-6 h-6 fill-purple-600 text-[#C084FC]" />

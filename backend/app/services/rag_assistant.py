@@ -1,8 +1,14 @@
 from typing import AsyncGenerator, List, Tuple
-from app.core.openai_client import get_openai_client
-from app.schemas.chat import ChatResponse, MemoryCitation
-from app.schemas.memory import MemoryResponse
-from app.services.embedding_service import STOP_WORDS, cosine_similarity, generate_deterministic_embedding
+try:
+    from app.core.openai_client import get_openai_client
+    from app.schemas.chat import ChatResponse, MemoryCitation
+    from app.schemas.memory import MemoryResponse
+    from app.services.embedding_service import STOP_WORDS, cosine_similarity, generate_deterministic_embedding
+except ImportError:
+    from backend.app.core.openai_client import get_openai_client
+    from backend.app.schemas.chat import ChatResponse, MemoryCitation
+    from backend.app.schemas.memory import MemoryResponse
+    from backend.app.services.embedding_service import STOP_WORDS, cosine_similarity, generate_deterministic_embedding
 
 STRICT_GROUNDING_SYSTEM_PROMPT = """You are Shadow, an AI personal memory assistant. Tagline: "Your life, remembered."
 Your sole purpose is to help the user recall and navigate facts from their private archive.

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 from pydantic import BaseModel, Field
 
@@ -14,7 +14,7 @@ class ChatMessage(BaseModel):
     role: str  # "user" | "assistant"
     content: str
     citations: Optional[List[MemoryCitation]] = None
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     is_grounded: bool = True
 
 
@@ -29,4 +29,4 @@ class ChatResponse(BaseModel):
     citations: List[MemoryCitation] = Field(default_factory=list)
     is_grounded: bool = True
     unfound: bool = False
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))

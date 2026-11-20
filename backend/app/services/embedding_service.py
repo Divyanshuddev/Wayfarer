@@ -3,8 +3,12 @@ import re
 from typing import List
 import numpy as np
 import uuid
-from app.core.openai_client import get_openai_client
-from app.schemas.memory import MemoryConnection, MemoryResponse
+try:
+    from app.core.openai_client import get_openai_client
+    from app.schemas.memory import MemoryConnection, MemoryResponse
+except ImportError:
+    from backend.app.core.openai_client import get_openai_client
+    from backend.app.schemas.memory import MemoryConnection, MemoryResponse
 
 STOP_WORDS = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",

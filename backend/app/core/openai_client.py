@@ -1,6 +1,9 @@
 from typing import Optional
 from openai import AsyncOpenAI
-from app.core.config import settings
+try:
+    from app.core.config import settings
+except ImportError:
+    from backend.app.core.config import settings
 
 
 class OpenAIClientSingleton:
