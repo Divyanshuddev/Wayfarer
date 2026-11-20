@@ -5,9 +5,6 @@ import { RetroGridBackground } from "@/components/layout/RetroGridBackground";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { TopHeader } from "@/components/layout/TopHeader";
 import { ShareTripModal } from "@/components/trips/ShareTripModal";
-import { authStore } from "@/lib/auth/auth-store";
-import { isSupabaseConfigured } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import React, { Suspense, useEffect, useState } from "react";
 
 export default function DashboardLayout({
@@ -15,19 +12,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const router = useRouter();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [isAuthChecking, setIsAuthChecking] = useState(true);
-
-  // Authentication Guard: require real user session
-  useEffect(() => {
-    const isAuthed = authStore.isAuthenticated() || isSupabaseConfigured();
-    if (!isAuthed) {
-      router.replace("/login");
-    } else {
-      setIsAuthChecking(false);
-    }
-  }, [router]);
 
   // Global ⌘K / Ctrl+K keyboard shortcut and custom event to open Share Trip modal
   useEffect(() => {
@@ -45,17 +30,6 @@ export default function DashboardLayout({
       window.removeEventListener("open-share-trip", handleOpenCustom);
     };
   }, []);
-
-  if (isAuthChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#08080c] text-gray-400 font-mono-retro text-xs">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
-          <span>Verifying traveler session...</span>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex bg-[#08080c] text-gray-100 relative">

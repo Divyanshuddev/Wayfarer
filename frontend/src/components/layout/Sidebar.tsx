@@ -9,6 +9,7 @@ import {
   Compass,
   FolderHeart,
   Globe,
+  LogIn,
   LogOut,
   MessageSquare,
   Plus,
@@ -210,22 +211,41 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
                 {currentUser?.full_name || "Wayfarer Traveler"}
               </p>
               <p className="text-[10px] text-gray-400 font-mono-retro truncate">
-                {currentUser?.email || "Authenticated"}
+                {currentUser?.email || "Guest Explorer"}
               </p>
             </div>
-            <span className="text-[9px] font-mono-retro text-sky-400 bg-sky-950/80 px-1.5 py-0.5 rounded border border-sky-800/40">
-              MEMBER
-            </span>
+            {currentUser ? (
+              <span className="text-[9px] font-mono-retro text-sky-400 bg-sky-950/80 px-1.5 py-0.5 rounded border border-sky-800/40">
+                MEMBER
+              </span>
+            ) : (
+              <Link
+                href="/login"
+                className="text-[9px] font-mono-retro text-sky-300 bg-sky-950 hover:bg-sky-900 px-1.5 py-0.5 rounded border border-sky-700/60 transition-colors"
+              >
+                SIGN IN
+              </Link>
+            )}
           </div>
 
-          {/* Log Out Button */}
-          <button
-            onClick={() => setShowLogoutModal(true)}
-            className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-mono-retro text-red-400/80 hover:text-red-300 hover:bg-red-950/30 border border-transparent hover:border-red-900/40 transition-all active:scale-[0.98]"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out Session</span>
-          </button>
+          {/* Action Button: Sign Out if authed, or Sign In button if guest */}
+          {currentUser ? (
+            <button
+              onClick={() => setShowLogoutModal(true)}
+              className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-mono-retro text-red-400/80 hover:text-red-300 hover:bg-red-950/30 border border-transparent hover:border-red-900/40 transition-all active:scale-[0.98]"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Sign Out Session</span>
+            </button>
+          ) : (
+            <Link
+              href="/login"
+              className="w-full flex items-center justify-center gap-2 py-1.5 px-3 rounded-lg text-xs font-mono-retro text-sky-400/90 hover:text-sky-300 hover:bg-sky-950/40 border border-sky-900/30 hover:border-sky-700/50 transition-all active:scale-[0.98]"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Sign In / Join</span>
+            </Link>
+          )}
         </div>
       </aside>
 

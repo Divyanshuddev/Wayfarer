@@ -162,6 +162,20 @@ class AuthStore {
     return { success: true, user: profile };
   }
 
+  public signInDemo(): UserProfile {
+    if (!this.initialized && typeof window !== "undefined") this.init();
+    const demoUser: UserProfile = {
+      id: "usr-traveler-1",
+      email: "aria@wayfarer.io",
+      full_name: "Aria Montgomery",
+      avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80",
+      created_at: new Date().toISOString(),
+    };
+    this.currentUser = demoUser;
+    this.save();
+    return demoUser;
+  }
+
   public signOut(): void {
     this.currentUser = null;
     this.save();

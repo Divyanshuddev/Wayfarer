@@ -2,7 +2,7 @@
 
 import { authStore } from "@/lib/auth/auth-store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { ArrowRight, Compass, Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowRight, Compass, Eye, EyeOff, Lock, Mail, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -52,6 +52,11 @@ export default function LoginPage() {
     router.push("/");
   };
 
+  const handleDemoLogin = () => {
+    authStore.signInDemo();
+    router.push("/");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#08080c] relative overflow-hidden text-gray-100 font-sans">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(56,189,248,0.12),rgba(8,8,12,0.98))]" />
@@ -60,9 +65,11 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md p-6 sm:p-8 rounded-3xl bg-[#0c0b14]/90 border border-[#23203c] shadow-[0_8px_40px_rgba(0,0,0,0.6)] space-y-6 backdrop-blur-xl">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center border border-sky-400/40 shadow-[0_0_20px_rgba(56,189,248,0.35)]">
-            <Compass className="w-6 h-6 text-white" />
-          </div>
+          <Link href="/" className="inline-block group">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center border border-sky-400/40 shadow-[0_0_20px_rgba(56,189,248,0.35)] group-hover:scale-105 transition-transform">
+              <Compass className="w-6 h-6 text-white" />
+            </div>
+          </Link>
           <h1 className="text-2xl font-bold tracking-tight text-white font-mono-retro">
             WAYFARER
           </h1>
@@ -76,6 +83,24 @@ export default function LoginPage() {
             {errorMessage}
           </div>
         )}
+
+        {/* 1-Click Demo Traveler Login */}
+        <button
+          type="button"
+          onClick={handleDemoLogin}
+          className="w-full py-2.5 px-4 rounded-xl text-xs font-mono-retro text-sky-200 bg-sky-950/50 hover:bg-sky-900/60 border border-sky-700/50 hover:border-sky-400/60 transition-all shadow-[0_0_15px_rgba(56,189,248,0.15)] flex items-center justify-center gap-2 active:scale-95"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-sky-400" />
+          <span>Explore as Verified Traveler (1-Click)</span>
+        </button>
+
+        <div className="relative flex items-center justify-center">
+          <div className="border-t border-[#1e1c30] w-full" />
+          <span className="bg-[#0c0b14] px-3 text-[10px] font-mono-retro text-gray-500 uppercase tracking-wider">
+            or sign in with email
+          </span>
+          <div className="border-t border-[#1e1c30] w-full" />
+        </div>
 
         {/* Credentials Form */}
         <form onSubmit={handleLogin} className="space-y-4 text-xs font-sans">
@@ -103,7 +128,7 @@ export default function LoginPage() {
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sky-400 hover:text-sky-300 text-[11px] font-mono-retro transition-colors"
+                className="text-[10px] font-mono-retro text-sky-400 hover:text-sky-300"
               >
                 Forgot password?
               </Link>
@@ -138,11 +163,19 @@ export default function LoginPage() {
         </form>
 
         {/* Footer */}
-        <div className="text-center pt-2 text-xs text-gray-400 font-mono-retro border-t border-[#1a182c]">
-          <span>Don't have an account yet? </span>
-          <Link href="/signup" className="text-sky-400 hover:text-sky-300 font-medium hover:underline">
-            Create an Account →
-          </Link>
+        <div className="space-y-3 pt-2 text-center text-xs text-gray-400 font-mono-retro border-t border-[#1a182c]">
+          <div>
+            <span>Don't have an account yet? </span>
+            <Link href="/signup" className="text-sky-400 hover:text-sky-300 font-medium hover:underline">
+              Create an Account →
+            </Link>
+          </div>
+          <div>
+            <Link href="/" className="inline-flex items-center gap-1.5 text-gray-500 hover:text-gray-300 transition-colors">
+              <ArrowLeft className="w-3 h-3" />
+              <span>Browse Community Trips Without Signing In</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
