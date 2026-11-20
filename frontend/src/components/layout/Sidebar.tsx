@@ -3,10 +3,13 @@
 import { tripStore } from "@/lib/storage/trip-store";
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
 import {
+  Bell,
   Brain,
   ChevronDown,
+  Clock,
   Compass,
   Cpu,
+  FolderHeart,
   Globe,
   HelpCircle,
   Hotel,
@@ -16,6 +19,7 @@ import {
   MessageSquare,
   Plus,
   Radio,
+  Search,
   Settings,
   ShieldCheck,
   Sparkles,
@@ -78,6 +82,15 @@ export function Sidebar({ onOpenQuickAdd }: SidebarProps) {
         { href: "/", label: "Explore & Trending", icon: Compass },
         { href: "/trips", label: "All Trips & Reviews", icon: Globe, count: tripCount },
         { href: "/qa", label: "Traveler Q&A Hub", icon: MessageSquare, count: questionCount, badge: "Hotel Q&A" },
+      ],
+    },
+    {
+      title: "DISCOVER & ITINERARIES",
+      items: [
+        { href: "/collections", label: "Curated Collections", icon: FolderHeart },
+        { href: "/timeline", label: "Travel Timeline", icon: Clock },
+        { href: "/reminders", label: "Booking Alerts", icon: Bell, badge: "Alerts" },
+        { href: "/search", label: "Search Destinations", icon: Search, badge: "⌘F" },
       ],
     },
   ];

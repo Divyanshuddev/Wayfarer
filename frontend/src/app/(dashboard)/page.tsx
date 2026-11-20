@@ -144,11 +144,10 @@ export default function HomePage() {
             <div
               key={dest.name}
               onClick={() => setSelectedDestination(selectedDestination === dest.name ? "all" : dest.name)}
-              className={`cursor-pointer p-4 rounded-2xl border transition-all ${
-                selectedDestination === dest.name
-                  ? "bg-sky-950/40 border-sky-500 shadow-[0_0_15px_rgba(56,189,248,0.2)]"
-                  : "bg-[#0c0b14]/80 border-[#222036] hover:border-sky-500/40 hover:bg-[#121020]"
-              }`}
+              className={`cursor-pointer p-4 rounded-2xl border transition-all ${selectedDestination === dest.name
+                ? "bg-sky-950/40 border-sky-500 shadow-[0_0_15px_rgba(56,189,248,0.2)]"
+                : "bg-[#0c0b14]/80 border-[#222036] hover:border-sky-500/40 hover:bg-[#121020]"
+                }`}
             >
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-mono-retro px-2 py-0.5 rounded bg-sky-950/80 text-sky-300 border border-sky-800/40">
@@ -182,11 +181,10 @@ export default function HomePage() {
               <button
                 key={style}
                 onClick={() => setSelectedStyle(style)}
-                className={`px-3 py-1 rounded-full text-xs font-mono-retro whitespace-nowrap transition-all ${
-                  selectedStyle === style
-                    ? "bg-sky-500 text-white font-medium"
-                    : "bg-[#141224] text-gray-400 border border-[#252238] hover:text-white"
-                }`}
+                className={`px-3 py-1 rounded-full text-xs font-mono-retro whitespace-nowrap transition-all ${selectedStyle === style
+                  ? "bg-sky-500 text-white font-medium"
+                  : "bg-[#141224] text-gray-400 border border-[#252238] hover:text-white"
+                  }`}
               >
                 {style === "all" ? "All Styles" : style}
               </button>

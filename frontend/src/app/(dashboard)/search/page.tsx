@@ -1,11 +1,9 @@
 "use client";
 
-import { SearchResultCard } from "@/components/search/SearchResultCard";
-import { SemanticSearchBar } from "@/components/search/SemanticSearchBar";
-import { ShadowChatPanel } from "@/components/search/ShadowChatPanel";
-import { shadowStore } from "@/lib/storage/store";
-import { SearchResult } from "@/types/database";
-import { Bot, MessageSquare, Search, Sparkles } from "lucide-react";
+import { TripCard } from "@/components/trips/TripCard";
+import { tripStore } from "@/lib/storage/trip-store";
+import { Trip } from "@/types/trip";
+import { Compass, Filter, Hotel, MapPin, Search, Sparkles } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import React, { Suspense, useEffect, useState } from "react";
 
@@ -13,12 +11,9 @@ function SearchPageContent() {
   const searchParams = useSearchParams();
   const initialQuery = searchParams.get("q") || "";
 
-  const [activeTab, setActiveTab] = useState<"search" | "chat">("search");
   const [query, setQuery] = useState(initialQuery);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedSentiment, setSelectedSentiment] = useState("all");
-  const [hasAttachments, setHasAttachments] = useState(false);
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<Trip[]>([]);
+  const [selectedStyle, setSelectedStyle] = useState("all");
 
   useEffect(() => {
     if (initialQuery) {
@@ -28,101 +23,76 @@ function SearchPageContent() {
 
   useEffect(() => {
     const doSearch = () => {
-      const res = shadowStore.search(query, {
-        category: selectedCategory,
-        sentiment: selectedSentiment,
-        hasAttachments,
-      });
-      setResults(res);
+      const trips = tripStore.getTrips(undefined, selectedStyle, query);
+      setResults(trips);
     };
     doSearch();
-    return shadowStore.subscribe(doSearch);
-  }, [query, selectedCategory, selectedSentiment, hasAttachments]);
+    return tripStore.subscribe(doSearch);
+  }, [query, selectedStyle]);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-100">
-            Semantic Search & AI Assistant
+      <div className="border-b border-[#201d32] pb-5">
+        <div className="flex items-center gap-2">
+          <Search className="w-5 h-5 text-sky-400" />
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+            Search Destinations & Hotels
           </h1>
-          <p className="text-xs sm:text-sm text-gray-400 font-serif">
-            Find memories via associative semantics or consult Shadow with strict grounding.
-          </p>
         </div>
-
-        {/* View Switcher Pill */}
-        <div className="flex items-center p-1 rounded-xl bg-[#0f0e1c] border border-[#232036] w-fit">
-          <button
-            onClick={() => setActiveTab("search")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${
-              activeTab === "search"
-                ? "bg-purple-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]"
-                : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            <Search className="w-3.5 h-3.5" />
-            <span>Semantic Search</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("chat")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono-retro transition-all ${
-              activeTab === "chat"
-                ? "bg-purple-600 text-white shadow-[0_0_12px_rgba(168,85,247,0.4)]"
-                : "text-gray-400 hover:text-gray-200"
-            }`}
-          >
-            <Bot className="w-3.5 h-3.5" />
-            <span>Shadow AI Chat</span>
-          </button>
-        </div>
+        <p className="text-xs sm:text-sm text-gray-400 mt-1">
+          Find authentic travel reports, real hotel price ranges, and honest community advice.
+        </p>
       </div>
 
-      {/* Tab 1: Semantic Search */}
-      {activeTab === "search" && (
-        <div className="space-y-6">
-          <SemanticSearchBar
-            query={query}
-            onQueryChange={setQuery}
-            selectedCategory={selectedCategory}
-            onCategoryChange={setSelectedCategory}
-            selectedSentiment={selectedSentiment}
-            onSentimentChange={setSelectedSentiment}
-            hasAttachments={hasAttachments}
-            onHasAttachmentsChange={setHasAttachments}
-          />
+      {/* Search Input Bar */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-sky-400" />
+        <input
+          type="text"
+          placeholder="Search by destination (Kyoto, Bali), hotels, or keywords (fondue, ramen, beach)..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full bg-[#0c0b14]/90 border border-[#25223c] focus:border-sky-500 rounded-2xl pl-11 pr-4 py-3 text-xs sm:text-sm text-gray-100 placeholder-gray-500 focus:outline-none shadow-lg"
+        />
+      </div>
 
-          <div className="flex items-center justify-between text-xs font-mono-retro text-gray-400 border-b border-[#1f1d2e] pb-2">
-            <span>
-              {results.length} result(s) found {query ? `for "${query}"` : ""}
-            </span>
-            <span className="text-purple-400">Hybrid Match: Cosine + Lexical</span>
-          </div>
+      {/* Style Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        {["all", "Solo", "Couple", "Backpacking", "Luxury", "Family"].map((style) => (
+          <button
+            key={style}
+            onClick={() => setSelectedStyle(style)}
+            className={`px-3 py-1 rounded-full text-xs font-mono-retro whitespace-nowrap transition-all ${
+              selectedStyle === style
+                ? "bg-sky-500 text-white font-medium shadow-[0_0_10px_rgba(56,189,248,0.3)]"
+                : "bg-[#141224] text-gray-400 border border-[#252238] hover:text-white"
+            }`}
+          >
+            {style === "all" ? "All Travel Styles" : style}
+          </button>
+        ))}
+      </div>
 
-          {results.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {results.map((r) => (
-                <SearchResultCard key={r.memory.id} result={r} />
-              ))}
-            </div>
-          ) : (
-            <div className="p-16 text-center rounded-2xl bg-[#0e0d18] border border-[#232038] space-y-3">
-              <p className="text-sm font-mono-retro text-gray-400">
-                No memories matched your search criteria.
-              </p>
-              <p className="text-xs text-gray-400 font-serif">
-                Try searching for related concepts, names, or feelings (e.g. &ldquo;Kyoto&rdquo;, &ldquo;entropy&rdquo;, &ldquo;coffee&rdquo;).
-              </p>
-            </div>
-          )}
+      {/* Results Header */}
+      <div className="flex items-center justify-between text-xs font-mono-retro text-gray-400">
+        <span>Found {results.length} matching trips & hotel guides</span>
+      </div>
+
+      {/* Results Grid */}
+      {results.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {results.map((trip) => (
+            <TripCard key={trip.id} trip={trip} />
+          ))}
         </div>
-      )}
-
-      {/* Tab 2: Grounded Shadow AI Chat */}
-      {activeTab === "chat" && (
-        <div className="space-y-4">
-          <ShadowChatPanel />
+      ) : (
+        <div className="p-16 text-center rounded-2xl bg-[#0c0b14]/60 border border-[#222036] space-y-3">
+          <Compass className="w-10 h-10 text-gray-500 mx-auto" />
+          <h3 className="text-sm font-semibold text-gray-200">No destinations match "{query}"</h3>
+          <p className="text-xs text-gray-400 max-w-sm mx-auto">
+            Try searching for cities like "Kyoto", "Bali", "Amalfi", or keywords like "hotel" or "pasta".
+          </p>
         </div>
       )}
     </div>
@@ -131,7 +101,7 @@ function SearchPageContent() {
 
 export default function SearchPage() {
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xs font-mono-retro text-gray-400">Loading vault search...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-xs font-mono-retro text-gray-400">Loading search...</div>}>
       <SearchPageContent />
     </Suspense>
   );

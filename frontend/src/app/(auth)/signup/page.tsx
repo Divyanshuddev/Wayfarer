@@ -1,7 +1,7 @@
 "use client";
 
 import { createClient, isSupabaseConfigured } from "@/lib/supabase/client";
-import { ArrowRight, Bot, Lock, Mail, ShieldCheck, Sparkles, User } from "lucide-react";
+import { ArrowRight, Compass, Eye, EyeOff, Lock, Mail, ShieldCheck, User } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
@@ -11,6 +11,7 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -46,19 +47,19 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#08080c] relative overflow-hidden text-gray-100 font-sans">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(139,92,246,0.18),rgba(8,8,12,0.95))]" />
-      <div className="absolute inset-0 opacity-[0.03] bg-[linear-gradient(to_right,#a855f7_1px,transparent_1px),linear-gradient(to_bottom,#a855f7_1px,transparent_1px)] bg-[size:3rem_3rem]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(56,189,248,0.12),rgba(8,8,12,0.98))]" />
+      <div className="absolute inset-0 opacity-[0.02] bg-[linear-gradient(to_right,#38bdf8_1px,transparent_1px),linear-gradient(to_bottom,#38bdf8_1px,transparent_1px)] bg-[size:3rem_3rem]" />
 
-      <div className="relative z-10 w-full max-w-md p-6 sm:p-8 rounded-3xl bg-[#0e0d18]/90 border border-purple-500/30 shadow-[0_0_50px_rgba(147,51,234,0.2)] space-y-6">
+      <div className="relative z-10 w-full max-w-md p-6 sm:p-8 rounded-3xl bg-[#0c0b14]/90 border border-[#23203c] shadow-[0_8px_40px_rgba(0,0,0,0.6)] space-y-6 backdrop-blur-xl">
         <div className="text-center space-y-2">
-          <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center border border-purple-400/40 shadow-[0_0_20px_rgba(168,85,247,0.4)]">
-            <span className="font-mono-retro font-bold text-white text-xl">Ψ</span>
+          <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center border border-sky-400/40 shadow-[0_0_20px_rgba(56,189,248,0.35)]">
+            <Compass className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-gray-100 font-mono-retro">
-            INITIALIZE VAULT
+          <h1 className="text-2xl font-bold tracking-tight text-white font-mono-retro">
+            JOIN WAYFARER
           </h1>
-          <p className="text-xs text-gray-400 font-serif">
-            Create your private, grounded digital memory archive.
+          <p className="text-xs text-gray-400">
+            Share authentic trips, real hotel prices, and unfiltered advice.
           </p>
         </div>
 
@@ -70,68 +71,75 @@ export default function SignupPage() {
 
         <form onSubmit={handleSignup} className="space-y-4 text-xs font-sans">
           <div>
-            <label className="block text-gray-400 font-mono-retro mb-1">
-              Your Full Name
+            <label className="block text-gray-300 font-mono-retro mb-1.5 text-[11px]">
+              Full Name / Traveler Handle
             </label>
             <div className="relative">
-              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 required
-                placeholder="Kaelen Vance"
+                placeholder="Aria Montgomery"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full bg-[#131122] border border-[#26233e] focus:border-purple-500/70 rounded-xl pl-9 pr-3 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none"
+                className="w-full bg-[#131122] border border-[#25223c] focus:border-sky-500 rounded-xl pl-9 pr-3 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-gray-400 font-mono-retro mb-1">
+            <label className="block text-gray-300 font-mono-retro mb-1.5 text-[11px]">
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="email"
                 required
-                placeholder="archivist@shadow.ai"
+                placeholder="traveler@wayfarer.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-[#131122] border border-[#26233e] focus:border-purple-500/70 rounded-xl pl-9 pr-3 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none"
+                className="w-full bg-[#131122] border border-[#25223c] focus:border-sky-500 rounded-xl pl-9 pr-3 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-gray-400 font-mono-retro mb-1">
-              Vault Passphrase
+            <label className="block text-gray-300 font-mono-retro mb-1.5 text-[11px]">
+              Password
             </label>
             <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 placeholder="Minimum 8 characters"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-[#131122] border border-[#26233e] focus:border-purple-500/70 rounded-xl pl-9 pr-3 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none"
+                className="w-full bg-[#131122] border border-[#25223c] focus:border-sky-500 rounded-xl pl-9 pr-9 py-2.5 text-xs text-gray-100 placeholder-gray-500 focus:outline-none transition-all"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+              >
+                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-medium text-xs shadow-[0_0_20px_rgba(168,85,247,0.35)] transition-all active:scale-[0.98]"
+            className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 hover:to-blue-500 text-white font-medium text-xs shadow-[0_0_20px_rgba(56,189,248,0.3)] transition-all active:scale-[0.98]"
           >
-            {isLoading ? "Provisioning..." : "Create Vault & Begin Archiving"}
+            {isLoading ? "Creating Account..." : "Create Free Traveler Account"}
           </button>
         </form>
 
         <div className="text-center pt-2 text-xs text-gray-400 font-mono-retro">
-          <span>Already have a vault? </span>
-          <Link href="/login" className="text-purple-400 hover:underline">
+          <span>Already have an account? </span>
+          <Link href="/login" className="text-sky-400 hover:text-sky-300 font-medium hover:underline">
             Sign In →
           </Link>
         </div>
