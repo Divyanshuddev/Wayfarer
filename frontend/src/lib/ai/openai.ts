@@ -8,6 +8,9 @@ export function isOpenAIConfigured(): boolean {
   );
 }
 
+// In Next.js client components and SSR, dangerouslyAllowBrowser allows evaluation
+// without throwing an Uncaught Error in the browser context.
 export const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY || "dummy-key-for-initialization",
+  dangerouslyAllowBrowser: true,
 });
