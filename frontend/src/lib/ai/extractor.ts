@@ -8,21 +8,22 @@ export function extractEntitiesLocal(text: string): ExtractedEntities {
   const firstLine = lines[0] || "Untitled Memory";
   const title = firstLine.length > 70 ? firstLine.slice(0, 67) + "..." : firstLine;
 
-  // Determine category by keywords
   const lower = cleaned.toLowerCase();
-  let category: MemoryCategory = "thought";
-  if (lower.includes("dr.") || lower.includes("spoke with") || lower.includes("talked to") || lower.includes("said") || lower.includes("meeting")) {
-    category = "conversation";
-  } else if (lower.includes("read") || lower.includes("book") || lower.includes("quote") || lower.includes("chapter") || lower.includes("author")) {
-    category = "reading";
-  } else if (lower.includes("ran") || lower.includes("visited") || lower.includes("flight") || lower.includes("hotel") || lower.includes("trip")) {
-    category = "event";
-  } else if (lower.includes("project") || lower.includes("team") || lower.includes("strategy") || lower.includes("roadmap") || lower.includes("deploy")) {
-    category = "work";
-  } else if (lower.includes("idea") || lower.includes("concept") || lower.includes("what if") || lower.includes("invention")) {
-    category = "idea";
-  } else if (lower.includes("watched") || lower.includes("movie") || lower.includes("podcast") || lower.includes("album") || lower.includes("song")) {
-    category = "media";
+  let category: MemoryCategory = "Ideas & Projects";
+  if (lower.includes("dr.") || lower.includes("spoke with") || lower.includes("talked to") || lower.includes("said") || lower.includes("meeting") || lower.includes("chat")) {
+    category = "Conversations";
+  } else if (lower.includes("read") || lower.includes("book") || lower.includes("quote") || lower.includes("chapter") || lower.includes("author") || lower.includes("movie") || lower.includes("podcast")) {
+    category = "Media & Recommendations";
+  } else if (lower.includes("ran") || lower.includes("visited") || lower.includes("flight") || lower.includes("hotel") || lower.includes("trip") || lower.includes("kyoto") || lower.includes("japan")) {
+    category = "Places & Travel";
+  } else if (lower.includes("receipt") || lower.includes("invoice") || lower.includes("tax") || lower.includes("contract") || lower.includes("pdf")) {
+    category = "Documents & Receipts";
+  } else if (lower.includes("run") || lower.includes("fitness") || lower.includes("health") || lower.includes("doctor") || lower.includes("workout")) {
+    category = "Health & Wellness";
+  } else if (lower.includes("birthday") || lower.includes("anniversary") || lower.includes("graduat") || lower.includes("wedding")) {
+    category = "Life Milestones";
+  } else if (lower.includes("friend") || lower.includes("dinner") || lower.includes("alex") || lower.includes("maya") || lower.includes("rahul")) {
+    category = "People & Experiences";
   }
 
   // Determine sentiment
@@ -31,9 +32,9 @@ export function extractEntitiesLocal(text: string): ExtractedEntities {
   const reflectiveWords = ["ponder", "stillness", "entropy", "virtue", "meaning", "memory", "philosoph", "insight", "heian", "quiet"];
   const negativeWords = ["failed", "stress", "broken", "exhausted", "pain", "sad", "disaster", "urgent"];
 
-  let posCount = positiveWords.filter((w) => lower.includes(w)).length;
-  let refCount = reflectiveWords.filter((w) => lower.includes(w)).length;
-  let negCount = negativeWords.filter((w) => lower.includes(w)).length;
+  const posCount = positiveWords.filter((w) => lower.includes(w)).length;
+  const refCount = reflectiveWords.filter((w) => lower.includes(w)).length;
+  const negCount = negativeWords.filter((w) => lower.includes(w)).length;
 
   if (refCount >= 2 || refCount > posCount) {
     sentiment = "reflective";
@@ -59,7 +60,7 @@ export function extractEntitiesLocal(text: string): ExtractedEntities {
     if (lower.includes(pt)) tagSet.add(pt);
   });
 
-  // Extract people names (capitalized words following with, to, and, Dr.)
+  // Extract people names
   const peopleSet = new Set<string>();
   const peopleMatches = cleaned.match(/(?:with|and|Dr\.|meeting)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/g);
   if (peopleMatches) {
@@ -71,7 +72,13 @@ export function extractEntitiesLocal(text: string): ExtractedEntities {
     });
   }
 
-  // Detect potential reminders (e.g., "birthday on Dec 12", "deliver prototype by Nov 28")
+  // Extract places
+  const placesSet = new Set<string>();
+  ["Kyoto", "San Francisco", "Zurich", "Berlin", "Tokyo", "Munich"].forEach((pc) => {
+    if (lower.includes(pc.toLowerCase())) placesSet.add(pc);
+  });
+
+  // Detect potential reminders
   const detected_reminders: { title: string; due_date: string; reminder_type: "birthday" | "follow_up" | "custom" }[] = [];
   if (lower.includes("birthday")) {
     const nextMonth = new Date();
@@ -91,7 +98,6 @@ export function extractEntitiesLocal(text: string): ExtractedEntities {
     });
   }
 
-  // Summary
   const summary = lines.slice(0, 2).join(" ").slice(0, 160) + (cleaned.length > 160 ? "..." : "");
 
   return {
@@ -101,7 +107,11 @@ export function extractEntitiesLocal(text: string): ExtractedEntities {
     sentiment,
     tags: Array.from(tagSet).slice(0, 6),
     people: Array.from(peopleSet).slice(0, 5),
-    location: null,
+    places: Array.from(placesSet).slice(0, 3),
+    dates: [],
+    topics: Array.from(tagSet).slice(0, 5),
+    details: [summary],
+    location: Array.from(placesSet)[0] || null,
     memory_date: null,
     detected_reminders,
   };
@@ -125,17 +135,18 @@ Given the user's raw memory text, extract structured metadata strictly adhering 
 {
   "title": "Concise evocative title (max 60 chars)",
   "summary": "1-2 sentence core distillation (max 180 chars)",
-  "category": "thought" | "event" | "conversation" | "media" | "reading" | "work" | "personal" | "location" | "idea",
+  "category": "People & Experiences" | "Ideas & Projects" | "Places & Travel" | "Documents & Receipts" | "Media & Recommendations" | "Health & Wellness" | "Conversations" | "Life Milestones",
   "sentiment": "positive" | "neutral" | "negative" | "reflective",
   "tags": ["lowercase-kebab-tag", ...],
   "people": ["Full Name", ...],
+  "places": ["Location name", ...],
   "location": "Location name or null",
   "memory_date": "ISO 8601 date string if explicitly referenced, otherwise null",
   "detected_reminders": [
     {
       "title": "Reminder title",
       "due_date": "ISO 8601 string",
-      "reminder_type": "birthday" | "anniversary" | "follow_up" | "memory_recurrence" | "custom"
+      "reminder_type": "birthday" | "anniversary" | "follow_up" | "event" | "custom"
     }
   ]
 }`,
@@ -148,14 +159,22 @@ Given the user's raw memory text, extract structured metadata strictly adhering 
     });
 
     const parsed = JSON.parse(response.choices[0]?.message?.content || "{}");
+    const people = Array.isArray(parsed.people) ? parsed.people : [];
+    const places = Array.isArray(parsed.places) ? parsed.places : (parsed.location ? [parsed.location] : []);
+    const tags = Array.isArray(parsed.tags) ? parsed.tags : [];
+
     return {
       title: parsed.title || text.slice(0, 50),
       summary: parsed.summary || text.slice(0, 150),
-      category: parsed.category || "thought",
+      category: parsed.category || "Ideas & Projects",
       sentiment: parsed.sentiment || "neutral",
-      tags: Array.isArray(parsed.tags) ? parsed.tags : [],
-      people: Array.isArray(parsed.people) ? parsed.people : [],
-      location: parsed.location || null,
+      tags,
+      people,
+      places,
+      dates: parsed.memory_date ? [parsed.memory_date] : [],
+      topics: tags,
+      details: [parsed.summary || ""],
+      location: parsed.location || places[0] || null,
       memory_date: parsed.memory_date || null,
       detected_reminders: Array.isArray(parsed.detected_reminders) ? parsed.detected_reminders : [],
     };

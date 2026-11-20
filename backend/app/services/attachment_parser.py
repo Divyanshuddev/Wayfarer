@@ -3,7 +3,6 @@ import re
 from typing import Optional
 from bs4 import BeautifulSoup
 import httpx
-from pypdf import PdfReader
 from app.core.openai_client import get_openai_client
 
 
@@ -61,14 +60,15 @@ async def perform_vision_ocr(image_bytes: bytes, mime_type: str = "image/jpeg") 
 
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    """Extracts plain text from PDF documents using pypdf."""
+    """Extracts plain text from PDF documents using PyMuPDF (fitz)."""
     try:
-        reader = PdfReader(io.BytesIO(pdf_bytes))
+        import pymupdf
+        doc = pymupdf.open(stream=pdf_bytes, filetype="pdf")
         extracted = []
-        for page in reader.pages:
-            text = page.extract_text()
+        for page in doc:
+            text = page.get_text()
             if text:
-                extracted.append(text)
+                extracted.append(text.strip())
         return "\n\n".join(extracted) if extracted else "Empty PDF document"
     except Exception as e:
         return f"PDF document preserved (Extraction notice: {e})"

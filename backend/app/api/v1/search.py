@@ -12,7 +12,7 @@ router = APIRouter()
 async def search_memories_get(
     q: str = "",
     category: Optional[str] = None,
-    sentiment: Optional[str] = None,
+    memory_type: Optional[str] = None,
     tag: Optional[str] = None,
     person: Optional[str] = None,
     current_user: AuthUser = Depends(get_current_user),
@@ -21,7 +21,7 @@ async def search_memories_get(
         q,
         SearchFilters(
             category=category if category != "all" else None,
-            sentiment=sentiment if sentiment != "all" else None,
+            memory_type=memory_type if memory_type != "all" else None,
             tag=tag,
             person=person,
         ),
@@ -49,12 +49,12 @@ def perform_hybrid_search(
     if filters:
         if filters.category:
             memories = [m for m in memories if m.category == filters.category]
-        if filters.sentiment:
-            memories = [m for m in memories if m.sentiment == filters.sentiment]
+        if filters.memory_type:
+            memories = [m for m in memories if m.memory_type.value == filters.memory_type]
         if filters.tag:
             memories = [m for m in memories if filters.tag in m.tags]
         if filters.person:
-            memories = [m for m in memories if filters.person in m.people]
+            memories = [m for m in memories if filters.person in m.extracted_entities.people]
         if filters.has_attachments:
             memories = [m for m in memories if m.attachments]
 
@@ -68,7 +68,7 @@ def perform_hybrid_search(
                     memory=m,
                     similarity=1.0,
                     match_reason="Filter match",
-                    highlighted_snippet=m.summary or m.content[:140],
+                    highlighted_snippet=m.ai_summary or m.description[:140],
                 )
                 for m in memories[:limit]
             ],
@@ -83,7 +83,10 @@ def perform_hybrid_search(
     results = []
 
     for m in memories:
-        full_text = f"{m.title} {m.content} {m.summary} {' '.join(m.tags)} {' '.join(m.people)} {m.location_name or ''}".lower()
+        people_str = " ".join(m.extracted_entities.people)
+        places_str = " ".join(m.extracted_entities.places)
+        topics_str = " ".join(m.extracted_entities.topics)
+        full_text = f"{m.title} {m.description} {m.ai_summary} {' '.join(m.tags)} {people_str} {places_str} {topics_str} {m.location or ''}".lower()
         reasons = []
         token_matches = 0
         lexical_score = 0.0
@@ -102,10 +105,14 @@ def perform_hybrid_search(
                 token_matches += 1
                 lexical_score += 0.35
                 reasons.append(f"Tag #{t}")
-            elif any(t in p.lower() for p in m.people):
+            elif any(t in p.lower() for p in m.extracted_entities.people):
                 token_matches += 1
                 lexical_score += 0.45
                 reasons.append(f"Person: {t}")
+            elif any(t in pl.lower() for pl in m.extracted_entities.places):
+                token_matches += 1
+                lexical_score += 0.4
+                reasons.append(f"Place: {t}")
             elif t in full_text:
                 token_matches += 1
                 lexical_score += 0.2
@@ -119,13 +126,13 @@ def perform_hybrid_search(
             reason_text = " • ".join(reasons[:2]) if reasons else f"Semantic similarity ({int(semantic_score * 100)}%)"
             
             # Highlight snippet
-            snippet = m.summary or m.content[:160]
+            snippet = m.ai_summary or m.description[:160]
             match_token = query_tokens[0] if query_tokens else q_clean
-            idx = m.content.lower().find(match_token)
+            idx = m.description.lower().find(match_token)
             if idx > -1:
                 start = max(0, idx - 50)
-                end = min(len(m.content), idx + 120)
-                snippet = ("..." if start > 0 else "") + m.content[start:end] + ("..." if end < len(m.content) else "")
+                end = min(len(m.description), idx + 120)
+                snippet = ("..." if start > 0 else "") + m.description[start:end] + ("..." if end < len(m.description) else "")
 
             results.append(
                 SearchResultItem(

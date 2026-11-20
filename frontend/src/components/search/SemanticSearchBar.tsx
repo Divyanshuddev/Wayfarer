@@ -1,16 +1,16 @@
-"use client";
-
-import { memoryCategories, memorySentiments } from "@/lib/validations/memory";
+import { memoryCategories, memoryTypes } from "@/lib/validations/memory";
 import { Filter, Search, SlidersHorizontal, X } from "lucide-react";
 import React, { useState } from "react";
 
-interface SemanticSearchBarProps {
+export interface SemanticSearchBarProps {
   query: string;
   onQueryChange: (q: string) => void;
   selectedCategory: string;
   onCategoryChange: (c: string) => void;
-  selectedSentiment: string;
-  onSentimentChange: (s: string) => void;
+  selectedType?: string;
+  onTypeChange?: (t: string) => void;
+  selectedSentiment?: string;
+  onSentimentChange?: (s: string) => void;
   hasAttachments: boolean;
   onHasAttachmentsChange: (v: boolean) => void;
 }
@@ -20,7 +20,9 @@ export function SemanticSearchBar({
   onQueryChange,
   selectedCategory,
   onCategoryChange,
-  selectedSentiment,
+  selectedType = "all",
+  onTypeChange,
+  selectedSentiment = "all",
   onSentimentChange,
   hasAttachments,
   onHasAttachmentsChange,
@@ -31,20 +33,20 @@ export function SemanticSearchBar({
     <div className="space-y-3">
       {/* Search Input Bar */}
       <div className="relative flex items-center">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B5CF6]" />
         <input
           type="text"
-          placeholder="Ask anything or search memories (e.g., 'What did Alain de Botton say?' or 'Kyoto rain')..."
+          placeholder="Ask anything or search memories (e.g. 'What did Alain de Botton say?' or 'Kyoto rain')..."
           value={query}
           onChange={(e) => onQueryChange(e.target.value)}
-          className="w-full bg-[#11101d] border border-[#232038] focus:border-purple-500/70 rounded-2xl pl-12 pr-28 py-3.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500/50 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.5)] transition-all"
+          className="w-full bg-[#0C0C12] border border-[#252238] focus:border-[#8B5CF6] rounded-2xl pl-12 pr-28 py-3.5 text-sm text-[#F4F3F8] placeholder-[#5C5873] focus:outline-none focus:ring-1 focus:ring-[#8B5CF6]/50 shadow-lg transition-all font-sans"
         />
 
         <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
           {query && (
             <button
               onClick={() => onQueryChange("")}
-              className="p-1 rounded-md text-gray-400 hover:text-gray-200"
+              className="p-1 rounded-md text-[#8E8AA6] hover:text-[#F4F3F8]"
             >
               <X className="w-4 h-4" />
             </button>
@@ -54,8 +56,8 @@ export function SemanticSearchBar({
             onClick={() => setShowFilters(!showFilters)}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-mono-retro transition-colors border ${
               showFilters
-                ? "bg-purple-950 text-purple-300 border-purple-500/50"
-                : "bg-[#181628] text-gray-400 border-[#2b2742] hover:text-gray-200"
+                ? "bg-purple-950 text-[#C084FC] border-purple-500/50"
+                : "bg-[#12121B] text-[#8E8AA6] border-[#252238] hover:text-[#F4F3F8]"
             }`}
           >
             <SlidersHorizontal className="w-3.5 h-3.5" />
@@ -66,41 +68,41 @@ export function SemanticSearchBar({
 
       {/* Collapsible Filter Bar */}
       {showFilters && (
-        <div className="p-4 rounded-xl bg-[#0e0d18] border border-[#222036] space-y-3 animate-in fade-in duration-150">
+        <div className="p-4 rounded-xl bg-[#0C0C12] border border-[#252238] space-y-3 animate-in fade-in duration-150">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Category Filter */}
             <div>
-              <label className="block text-[11px] font-mono-retro text-gray-400 mb-1">
+              <label className="block text-[11px] font-mono-retro text-[#8E8AA6] mb-1">
                 Category
               </label>
               <select
                 value={selectedCategory}
                 onChange={(e) => onCategoryChange(e.target.value)}
-                className="w-full bg-[#141222] border border-[#28253e] rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                className="w-full bg-[#12121B] border border-[#252238] rounded-lg px-2.5 py-1.5 text-xs text-[#F4F3F8] focus:outline-none focus:border-[#8B5CF6]"
               >
                 <option value="all">All Categories</option>
                 {memoryCategories.map((c) => (
                   <option key={c} value={c}>
-                    {c.charAt(0).toUpperCase() + c.slice(1)}
+                    {c}
                   </option>
                 ))}
               </select>
             </div>
 
-            {/* Sentiment Filter */}
+            {/* Type Filter */}
             <div>
-              <label className="block text-[11px] font-mono-retro text-gray-400 mb-1">
-                Sentiment
+              <label className="block text-[11px] font-mono-retro text-[#8E8AA6] mb-1">
+                Memory Type
               </label>
               <select
-                value={selectedSentiment}
-                onChange={(e) => onSentimentChange(e.target.value)}
-                className="w-full bg-[#141222] border border-[#28253e] rounded-lg px-2.5 py-1.5 text-xs text-gray-200 focus:outline-none focus:border-purple-500"
+                value={selectedType}
+                onChange={(e) => onTypeChange?.(e.target.value)}
+                className="w-full bg-[#12121B] border border-[#252238] rounded-lg px-2.5 py-1.5 text-xs text-[#F4F3F8] focus:outline-none focus:border-[#8B5CF6] capitalize"
               >
-                <option value="all">All Sentiments</option>
-                {memorySentiments.map((s) => (
-                  <option key={s} value={s}>
-                    {s.charAt(0).toUpperCase() + s.slice(1)}
+                <option value="all">All Types</option>
+                {memoryTypes.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
                   </option>
                 ))}
               </select>
@@ -113,9 +115,9 @@ export function SemanticSearchBar({
                   type="checkbox"
                   checked={hasAttachments}
                   onChange={(e) => onHasAttachmentsChange(e.target.checked)}
-                  className="rounded border-[#28253e] bg-[#141222] text-purple-600 focus:ring-purple-500"
+                  className="rounded border-[#252238] bg-[#12121B] text-purple-600 focus:ring-purple-500"
                 />
-                <span className="text-xs font-mono-retro text-gray-300">
+                <span className="text-xs font-mono-retro text-[#8E8AA6]">
                   Has Photos / Attachments
                 </span>
               </label>

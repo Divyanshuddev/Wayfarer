@@ -2,8 +2,9 @@ import math
 import re
 from typing import List
 import numpy as np
+import uuid
 from app.core.openai_client import get_openai_client
-from app.schemas.memory import LinkType, MemoryLink, MemoryResponse
+from app.schemas.memory import MemoryConnection, MemoryResponse
 
 STOP_WORDS = {
     "a", "about", "above", "after", "again", "against", "all", "am", "an", "and", "any", "are",
@@ -75,56 +76,54 @@ def cosine_similarity(v1: List[float], v2: List[float]) -> float:
     return float(np.dot(a, b) / (norm_a * norm_b))
 
 
-def discover_memory_links(new_mem: MemoryResponse, existing_mems: List[MemoryResponse]) -> List[MemoryLink]:
+def discover_memory_links(new_mem: MemoryResponse, existing_mems: List[MemoryResponse]) -> List[MemoryConnection]:
     """
-    Auto-discovers bidirectional knowledge graph links between the new memory and existing memories
+    Auto-discovers bidirectional knowledge graph connections between the new memory and existing memories
     based on shared people, topics, and thematic alignment.
     """
-    links: List[MemoryLink] = []
-    import uuid
+    connections: List[MemoryConnection] = []
 
     for m in existing_mems:
         if m.id == new_mem.id:
             continue
 
-        shared_people = [p for p in new_mem.people if p in m.people]
+        new_people = new_mem.extracted_entities.people
+        m_people = m.extracted_entities.people
+        shared_people = [p for p in new_people if p in m_people]
         shared_tags = [t for t in new_mem.tags if t in m.tags]
 
         if shared_people:
-            links.append(
-                MemoryLink(
-                    id=f"lnk-{uuid.uuid4().hex[:8]}",
+            connections.append(
+                MemoryConnection(
+                    id=f"conn-{uuid.uuid4().hex[:8]}",
                     source_memory_id=new_mem.id,
                     target_memory_id=m.id,
-                    link_type=LinkType.RELATED,
-                    confidence_score=0.90,
-                    reasoning=f"Shared presence of {', '.join(shared_people)}",
+                    similarity_score=0.92,
+                    connection_reason=f"Shared presence of {', '.join(shared_people)}",
                     target_memory_title=m.title
                 )
             )
         elif len(shared_tags) >= 2:
-            links.append(
-                MemoryLink(
-                    id=f"lnk-{uuid.uuid4().hex[:8]}",
+            connections.append(
+                MemoryConnection(
+                    id=f"conn-{uuid.uuid4().hex[:8]}",
                     source_memory_id=new_mem.id,
                     target_memory_id=m.id,
-                    link_type=LinkType.RELATED,
-                    confidence_score=0.82,
-                    reasoning=f"Thematic convergence on tags: {', '.join(shared_tags)}",
+                    similarity_score=0.85,
+                    connection_reason=f"Thematic convergence on tags: {', '.join(shared_tags)}",
                     target_memory_title=m.title
                 )
             )
-        elif new_mem.category == m.category and new_mem.category in ("reading", "work") and shared_tags:
-            links.append(
-                MemoryLink(
-                    id=f"lnk-{uuid.uuid4().hex[:8]}",
+        elif new_mem.category == m.category and shared_tags:
+            connections.append(
+                MemoryConnection(
+                    id=f"conn-{uuid.uuid4().hex[:8]}",
                     source_memory_id=new_mem.id,
                     target_memory_id=m.id,
-                    link_type=LinkType.REFERENCES,
-                    confidence_score=0.76,
-                    reasoning=f"Related intellectual inquiry in {new_mem.category} (#{shared_tags[0]})",
+                    similarity_score=0.78,
+                    connection_reason=f"Related intellectual inquiry in {new_mem.category} (#{shared_tags[0]})",
                     target_memory_title=m.title
                 )
             )
 
-    return links
+    return connections

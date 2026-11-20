@@ -1,46 +1,46 @@
 from datetime import datetime
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
 
 
-class MemoryCategory(str, Enum):
-    THOUGHT = "thought"
-    EVENT = "event"
-    CONVERSATION = "conversation"
-    MEDIA = "media"
-    READING = "reading"
-    WORK = "work"
-    PERSONAL = "personal"
-    LOCATION = "location"
-    IDEA = "idea"
-
-
-class MemorySentiment(str, Enum):
-    POSITIVE = "positive"
-    NEUTRAL = "neutral"
-    NEGATIVE = "negative"
-    REFLECTIVE = "reflective"
-
-
-class MemorySourceType(str, Enum):
-    QUICK_NOTE = "quick_note"
-    VOICE = "voice"
-    IMAGE_OCR = "image_ocr"
+class MemoryType(str, Enum):
+    NOTE = "note"
+    PHOTO = "photo"
+    VIDEO = "video"
     DOCUMENT = "document"
-    CHAT = "chat"
+    VOICE = "voice"
+    CONVERSATION = "conversation"
+    LINK = "link"
+    EVENT = "event"
 
 
-class LinkType(str, Enum):
-    RELATED = "related"
-    CAUSED = "caused"
-    FOLLOWS = "follows"
-    REFERENCES = "references"
-    OPPOSITE = "opposite"
+class MemoryCategory(str, Enum):
+    PEOPLE_EXPERIENCES = "People & Experiences"
+    IDEAS_PROJECTS = "Ideas & Projects"
+    PLACES_TRAVEL = "Places & Travel"
+    DOCUMENTS_RECEIPTS = "Documents & Receipts"
+    MEDIA_RECOMMENDATIONS = "Media & Recommendations"
+    HEALTH_WELLNESS = "Health & Wellness"
+    CONVERSATIONS = "Conversations"
+    LIFE_MILESTONES = "Life Milestones"
+
+
+class PrivacyLevel(str, Enum):
+    PRIVATE = "private"
+    LOCKED = "locked"
+
+
+class ExtractedEntities(BaseModel):
+    people: List[str] = Field(default_factory=list)
+    places: List[str] = Field(default_factory=list)
+    dates: List[str] = Field(default_factory=list)
+    topics: List[str] = Field(default_factory=list)
+    details: List[str] = Field(default_factory=list)
 
 
 class MemoryAttachmentBase(BaseModel):
-    file_path: str
+    storage_path: str
     file_name: str
     file_type: str
     file_size: int = 0
@@ -54,31 +54,30 @@ class MemoryAttachment(MemoryAttachmentBase):
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class MemoryLink(BaseModel):
+class MemoryConnection(BaseModel):
     id: str
     source_memory_id: str
     target_memory_id: str
-    link_type: LinkType = LinkType.RELATED
-    confidence_score: float = 0.8
-    reasoning: str
+    connection_reason: Optional[str] = None
+    similarity_score: float = 0.8
     target_memory_title: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class MemoryBase(BaseModel):
     title: str = Field(..., max_length=200)
-    content: str
-    summary: Optional[str] = ""
-    category: MemoryCategory = MemoryCategory.THOUGHT
-    sentiment: MemorySentiment = MemorySentiment.NEUTRAL
+    description: Optional[str] = ""
+    memory_type: MemoryType = MemoryType.NOTE
     memory_date: datetime = Field(default_factory=datetime.utcnow)
-    is_pinned: bool = False
-    is_favorite: bool = False
-    location_name: Optional[str] = None
-    weather: Optional[str] = None
+    location: Optional[str] = None
+    category: str = "Ideas & Projects"
     tags: List[str] = Field(default_factory=list)
-    people: List[str] = Field(default_factory=list)
-    source_type: MemorySourceType = MemorySourceType.QUICK_NOTE
+    ai_summary: Optional[str] = ""
+    extracted_entities: ExtractedEntities = Field(default_factory=ExtractedEntities)
+    personal_notes: Optional[str] = None
+    source_url: Optional[str] = None
+    privacy_level: PrivacyLevel = PrivacyLevel.PRIVATE
+    is_pinned: bool = False
     collection_ids: List[str] = Field(default_factory=list)
 
 
@@ -88,17 +87,18 @@ class MemoryCreate(MemoryBase):
 
 class MemoryUpdate(BaseModel):
     title: Optional[str] = None
-    content: Optional[str] = None
-    summary: Optional[str] = None
-    category: Optional[MemoryCategory] = None
-    sentiment: Optional[MemorySentiment] = None
+    description: Optional[str] = None
+    memory_type: Optional[MemoryType] = None
     memory_date: Optional[datetime] = None
-    is_pinned: Optional[bool] = None
-    is_favorite: Optional[bool] = None
-    location_name: Optional[str] = None
-    weather: Optional[str] = None
+    location: Optional[str] = None
+    category: Optional[str] = None
     tags: Optional[List[str]] = None
-    people: Optional[List[str]] = None
+    ai_summary: Optional[str] = None
+    extracted_entities: Optional[ExtractedEntities] = None
+    personal_notes: Optional[str] = None
+    source_url: Optional[str] = None
+    privacy_level: Optional[PrivacyLevel] = None
+    is_pinned: Optional[bool] = None
     collection_ids: Optional[List[str]] = None
 
 
@@ -108,16 +108,13 @@ class MemoryResponse(MemoryBase):
     created_at: datetime
     updated_at: datetime
     attachments: List[MemoryAttachment] = Field(default_factory=list)
-    links: List[MemoryLink] = Field(default_factory=list)
+    connections: List[MemoryConnection] = Field(default_factory=list)
 
 
-class ExtractedEntities(BaseModel):
+class AIExtractionOutput(BaseModel):
     title: str
-    summary: str
-    category: MemoryCategory
-    sentiment: MemorySentiment
+    ai_summary: str
+    category: str
     tags: List[str] = Field(default_factory=list)
-    people: List[str] = Field(default_factory=list)
-    location: Optional[str] = None
-    memory_date: Optional[str] = None
+    extracted_entities: ExtractedEntities = Field(default_factory=ExtractedEntities)
     detected_reminders: List[dict] = Field(default_factory=list)

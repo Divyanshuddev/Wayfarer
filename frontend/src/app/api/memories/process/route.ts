@@ -5,11 +5,11 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { content, image_url, file_name } = body;
+    const { content, image_url, url } = body;
 
-    if (!content && !image_url) {
+    if (!content && !image_url && !url) {
       return NextResponse.json(
-        { error: "Content or image is required for memory processing" },
+        { error: "Content, image, or URL is required for memory processing" },
         { status: 400 }
       );
     }
@@ -27,8 +27,10 @@ export async function POST(request: NextRequest) {
     const extracted = await extractEntitiesFromMemory(combinedText);
 
     // 2. Vector embedding generation
+    const tagsStr = (extracted.tags || []).join(" ");
+    const peopleStr = (extracted.people || []).join(" ");
     const embedding = await createEmbedding(
-      `${extracted.title} ${extracted.summary} ${combinedText} ${extracted.tags.join(" ")} ${extracted.people.join(" ")}`
+      `${extracted.title || ""} ${extracted.summary || ""} ${combinedText} ${tagsStr} ${peopleStr}`.trim()
     );
 
     return NextResponse.json({

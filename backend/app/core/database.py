@@ -10,29 +10,27 @@ from app.schemas.collections_reminders import (
     UserProfile,
 )
 from app.schemas.memory import (
-    LinkType,
+    ExtractedEntities,
     MemoryAttachment,
     MemoryCategory,
+    MemoryConnection,
     MemoryCreate,
-    MemoryLink,
     MemoryResponse,
-    MemorySentiment,
-    MemorySourceType,
+    MemoryType,
+    PrivacyLevel,
 )
 from app.services.embedding_service import discover_memory_links
 
 # Initial seed profile
 INITIAL_PROFILE = UserProfile(
     id="usr_00000000-0000-0000-0000-000000000001",
-    email="archivist@shadow.ai",
     full_name="Kaelen Vance",
     avatar_url="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
-    bio="Preserving the ephemeral nuances of everyday existence.",
-    ai_tone="grounded",
-    theme_preference="dark-purple",
-    storage_used_bytes=4892014,
+    theme="dark",
+    ai_auto_organize=True,
+    ai_auto_link=True,
+    default_privacy="private",
     created_at=datetime(2024, 1, 1),
-    updated_at=datetime(2024, 11, 20),
 )
 
 # Initial seed collections
@@ -43,11 +41,10 @@ INITIAL_COLLECTIONS = [
         name="Travel & Wandering",
         description="Footsteps in distant cities, smells of morning rain, train tickets and vistas.",
         icon="compass",
-        color="#a855f7",
-        is_smart=False,
+        accent_shade="#A855F7",
         memory_count=3,
+        last_viewed_at=datetime(2024, 11, 20, 10, 0),
         created_at=datetime(2024, 2, 10, 10, 0),
-        updated_at=datetime(2024, 9, 12, 10, 0),
     ),
     CollectionResponse(
         id="col-2",
@@ -55,11 +52,10 @@ INITIAL_COLLECTIONS = [
         name="Architectural Epiphanies",
         description="Breakthrough ideas on systems architecture, AI agency, and memory persistence.",
         icon="cpu",
-        color="#8b5cf6",
-        is_smart=False,
+        accent_shade="#8B5CF6",
         memory_count=2,
+        last_viewed_at=datetime(2024, 11, 19, 14, 20),
         created_at=datetime(2024, 3, 1, 9, 30),
-        updated_at=datetime(2024, 10, 15, 14, 20),
     ),
     CollectionResponse(
         id="col-3",
@@ -67,12 +63,10 @@ INITIAL_COLLECTIONS = [
         name="Conversations with Maya",
         description="Dialogue on philosophy, design aesthetics, and late-night espresso debriefs.",
         icon="message-circle",
-        color="#ec4899",
-        is_smart=True,
-        filter_criteria={"people": ["Maya Lin"]},
+        accent_shade="#EC4899",
         memory_count=2,
+        last_viewed_at=datetime(2024, 11, 18, 11, 0),
         created_at=datetime(2024, 4, 12, 16, 0),
-        updated_at=datetime(2024, 11, 1, 11, 0),
     ),
     CollectionResponse(
         id="col-4",
@@ -80,11 +74,10 @@ INITIAL_COLLECTIONS = [
         name="Deep Reading Notes",
         description="Quotes, marginalia, and critical reflections from books read this year.",
         icon="book-open",
-        color="#3b82f6",
-        is_smart=False,
+        accent_shade="#3B82F6",
         memory_count=2,
+        last_viewed_at=datetime(2024, 11, 15, 18, 0),
         created_at=datetime(2024, 1, 20, 12, 0),
-        updated_at=datetime(2024, 10, 25, 18, 0),
     ),
 ]
 
@@ -94,29 +87,34 @@ INITIAL_MEMORIES = [
         id="mem-001",
         user_id=INITIAL_PROFILE.id,
         title="Kyoto Twilight & The Hidden Moss Garden",
-        content="""Spent three quiet hours at Giou-ji temple just north of Arashiyama. The afternoon rain had just stopped, leaving beads of crystal water clinging to the velvet emerald moss carpet. 
+        description="""Spent three quiet hours at Giou-ji temple just north of Arashiyama. The afternoon rain had just stopped, leaving beads of crystal water clinging to the velvet emerald moss carpet. 
 
 Sat on the engawa veranda listening to water drops echoing in the bamboo grove behind the thatched hall. Spoke with an elderly gardener who shared that the garden has over 120 varieties of moss, some cultivated uninterrupted since the Heian period.
 
 Key insight: True mastery requires cultivating stillness before arranging stones. The silence here wasn't empty; it was dense with memory.""",
-        summary="Reflective afternoon at Giou-ji temple in Kyoto observing rain on 120 moss varieties with thoughts on Heian tranquility.",
-        category=MemoryCategory.EVENT,
-        sentiment=MemorySentiment.REFLECTIVE,
+        ai_summary="Reflective afternoon at Giou-ji temple in Kyoto observing rain on 120 moss varieties with thoughts on Heian tranquility.",
+        memory_type=MemoryType.PHOTO,
+        category="Places & Travel",
         memory_date=datetime(2024, 10, 14, 17, 45),
         is_pinned=True,
-        is_favorite=True,
-        location_name="Giou-ji Temple, Kyoto, Japan",
-        weather="Post-rain mist, 18°C",
+        location="Giou-ji Temple, Kyoto, Japan",
         tags=["travel", "kyoto", "mindfulness", "japan", "gardens"],
-        people=["Elderly Gardener"],
-        source_type=MemorySourceType.QUICK_NOTE,
+        extracted_entities=ExtractedEntities(
+            people=["Elderly Gardener"],
+            places=["Giou-ji Temple", "Kyoto", "Arashiyama"],
+            dates=["Autumn 2024"],
+            topics=["gardens", "mastery", "zen"],
+            details=["Over 120 varieties of moss cultivated since Heian period"]
+        ),
+        personal_notes="Must revisit in winter when snow blankets the thatch.",
+        privacy_level=PrivacyLevel.PRIVATE,
         collection_ids=["col-1"],
         attachments=[
             MemoryAttachment(
                 id="att-001",
                 memory_id="mem-001",
                 user_id=INITIAL_PROFILE.id,
-                file_path="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&auto=format&fit=crop&q=80",
+                storage_path="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=800&auto=format&fit=crop&q=80",
                 file_name="kyoto-moss-temple.jpg",
                 file_type="image/jpeg",
                 file_size=2450120,
@@ -124,7 +122,7 @@ Key insight: True mastery requires cultivating stillness before arranging stones
                 created_at=datetime(2024, 10, 14, 17, 48),
             )
         ],
-        links=[],
+        connections=[],
         created_at=datetime(2024, 10, 14, 17, 50),
         updated_at=datetime(2024, 10, 14, 17, 50),
     ),
@@ -132,7 +130,7 @@ Key insight: True mastery requires cultivating stillness before arranging stones
         id="mem-002",
         user_id=INITIAL_PROFILE.id,
         title="Late Night Strategy with Alex on Agent Memory Systems",
-        content="""Dinner at Blue Bottle Roastery with Alex Chen. We debated vector retrieval versus symbolic knowledge graphs for long-term AI memory persistence.
+        description="""Dinner at Blue Bottle Roastery with Alex Chen. We debated vector retrieval versus symbolic knowledge graphs for long-term AI memory persistence.
 
 Alex's thesis: Raw embeddings without entity-linking degrade over long spans because temporal decay isn't encoded in pure cosine distances. A memory from 3 years ago about coffee might eclipse yesterday's urgent discussion on the same topic.
 
@@ -142,20 +140,25 @@ We sketched a hybrid retrieval pattern:
 3. Direct entity links for precise biographical grounding
 
 Agreed to prototype this by mid-November before our quarterly summit.""",
-        summary="Strategy debate with Alex Chen on hybrid vector retrieval, temporal decay curves, and entity-linking for long-term AI memory.",
-        category=MemoryCategory.WORK,
-        sentiment=MemorySentiment.POSITIVE,
+        ai_summary="Strategy debate with Alex Chen on hybrid vector retrieval, temporal decay curves, and entity-linking for long-term AI memory.",
+        memory_type=MemoryType.NOTE,
+        category="Ideas & Projects",
         memory_date=datetime(2024, 11, 4, 22, 15),
         is_pinned=True,
-        is_favorite=True,
-        location_name="Blue Bottle Roastery, San Francisco",
-        weather="Crisp fog, 13°C",
+        location="Blue Bottle Roastery, San Francisco",
         tags=["tech", "ai", "rag", "architecture", "san-francisco"],
-        people=["Alex Chen"],
-        source_type=MemorySourceType.QUICK_NOTE,
+        extracted_entities=ExtractedEntities(
+            people=["Alex Chen"],
+            places=["Blue Bottle Roastery", "San Francisco"],
+            dates=["Mid-November summit"],
+            topics=["agent memory", "vector retrieval", "temporal decay"],
+            details=["Sketch 3-stage hybrid retrieval pattern"]
+        ),
+        personal_notes="Alex will test the benchmark dataset on weekend.",
+        privacy_level=PrivacyLevel.PRIVATE,
         collection_ids=["col-2"],
         attachments=[],
-        links=[],
+        connections=[],
         created_at=datetime(2024, 11, 4, 22, 30),
         updated_at=datetime(2024, 11, 4, 22, 30),
     ),
@@ -163,27 +166,32 @@ Agreed to prototype this by mid-November before our quarterly summit.""",
         id="mem-003",
         user_id=INITIAL_PROFILE.id,
         title="Maya's Concept on 'Negative Space in Interface Design'",
-        content="""Met Maya Lin at the Nordic Bakery on Hayes St. She brought her sketchbook filled with ink studies exploring how white space functions not as absence, but as deliberate pauses—like rests in a musical score.
+        description="""Met Maya Lin at the Nordic Bakery on Hayes St. She brought her sketchbook filled with ink studies exploring how white space functions not as absence, but as deliberate pauses—like rests in a musical score.
 
 She argued that modern software suffers from informational claustrophobia. Interfaces scream for clicks instead of creating room for the user to breathe and recall their own intentions.
 
 Key takeaway for Shadow: Keep the interface obsidian and dark, with luminescence only where memory sparks. Let the silence do the work.
 
 Remember: Maya's birthday is coming up on December 12th! Need to source that vintage typography specimen book from Munich.""",
-        summary="Discussion with Maya Lin on interface negative space as musical rests, plus reminder for her birthday on Dec 12.",
-        category=MemoryCategory.CONVERSATION,
-        sentiment=MemorySentiment.REFLECTIVE,
+        ai_summary="Discussion with Maya Lin on interface negative space as musical rests, plus reminder for her birthday on Dec 12.",
+        memory_type=MemoryType.CONVERSATION,
+        category="Conversations",
         memory_date=datetime(2024, 10, 28, 14, 0),
         is_pinned=False,
-        is_favorite=True,
-        location_name="Nordic Bakery, Hayes Valley",
-        weather="Overcast autumn, 16°C",
+        location="Nordic Bakery, Hayes Valley",
         tags=["design", "minimalism", "philosophy", "conversations"],
-        people=["Maya Lin"],
-        source_type=MemorySourceType.QUICK_NOTE,
+        extracted_entities=ExtractedEntities(
+            people=["Maya Lin"],
+            places=["Nordic Bakery", "Hayes Valley", "Munich"],
+            dates=["December 12"],
+            topics=["negative space", "interface design", "typography"],
+            details=["Vintage typography specimen book from Munich for 30th birthday"]
+        ),
+        personal_notes="Maya loved the cardamom bun.",
+        privacy_level=PrivacyLevel.PRIVATE,
         collection_ids=["col-3"],
         attachments=[],
-        links=[],
+        connections=[],
         created_at=datetime(2024, 10, 28, 14, 30),
         updated_at=datetime(2024, 10, 28, 14, 30),
     ),
@@ -191,27 +199,32 @@ Remember: Maya's birthday is coming up on December 12th! Need to source that vin
         id="mem-004",
         user_id=INITIAL_PROFILE.id,
         title="Finished 'The Architecture of Happiness' by Alain de Botton",
-        content="""Completed the final chapter on the flight back from Zurich. 
+        description="""Completed the final chapter on the flight back from Zurich. 
 
 De Botton writes: 'What we search for in a work of art is not mere beauty, but an echo of the virtues we lack.' We don't just love buildings or rooms for their physical geometry; we love them when they speak to the person we wish we were when we occupy them.
 
 Applied to digital spaces: What emotional shelter does our software build? Does it foster calmness and clarity, or agitation?
 
 Favorite quote: 'Belief in the significance of architecture is premised on the notion that we are, for better or worse, different people in different places.'""",
-        summary="Notes on Alain de Botton's book exploring how spaces shape internal virtue and emotional shelter in architecture and software.",
-        category=MemoryCategory.READING,
-        sentiment=MemorySentiment.REFLECTIVE,
+        ai_summary="Notes on Alain de Botton's book exploring how spaces shape internal virtue and emotional shelter in architecture and software.",
+        memory_type=MemoryType.DOCUMENT,
+        category="Media & Recommendations",
         memory_date=datetime(2024, 9, 18, 19, 20),
         is_pinned=False,
-        is_favorite=False,
-        location_name="Flight LX38, Swiss Air",
-        weather="Cruising altitude 36,000 ft",
+        location="Flight LX38, Swiss Air",
         tags=["books", "philosophy", "architecture", "reading"],
-        people=["Alain de Botton"],
-        source_type=MemorySourceType.QUICK_NOTE,
+        extracted_entities=ExtractedEntities(
+            people=["Alain de Botton"],
+            places=["Zurich"],
+            dates=["September 2024"],
+            topics=["architecture", "happiness", "virtues", "design philosophy"],
+            details=["De Botton: Architecture as emotional shelter for the self"]
+        ),
+        personal_notes="Re-read chapter 4 before starting the living room redesign.",
+        privacy_level=PrivacyLevel.PRIVATE,
         collection_ids=["col-4"],
         attachments=[],
-        links=[],
+        connections=[],
         created_at=datetime(2024, 9, 18, 20, 0),
         updated_at=datetime(2024, 9, 18, 20, 0),
     ),
@@ -219,29 +232,34 @@ Favorite quote: 'Belief in the significance of architecture is premised on the n
         id="mem-005",
         user_id=INITIAL_PROFILE.id,
         title="Espresso Tasting Notes: Sidama Bensa Natural",
-        content="""Dialed in 18g in, 42g out in 28 seconds on 9 bars. 
+        description="""Dialed in 18g in, 42g out in 28 seconds on 9 bars. 
 Tasting notes: Vibrant bergamot aroma followed immediately by stewed wild blueberry, candied lemon rind, and a remarkably clean lilac floral finish. Very silky body with zero astringency.
 
 Roaster: Tim Wendelboe (roasted Oct 2).
 Grinder setting: 3.4 on the P64 SSP MP burrs. Water composition: 45ppm GH / 20ppm KH.""",
-        summary="Espresso extraction profile and tasting notes for Tim Wendelboe Ethiopian Sidama Bensa Natural.",
-        category=MemoryCategory.THOUGHT,
-        sentiment=MemorySentiment.POSITIVE,
+        ai_summary="Espresso extraction profile and tasting notes for Tim Wendelboe Ethiopian Sidama Bensa Natural.",
+        memory_type=MemoryType.NOTE,
+        category="People & Experiences",
         memory_date=datetime(2024, 10, 20, 8, 30),
         is_pinned=False,
-        is_favorite=False,
-        location_name="Home Espresso Station",
-        weather="Bright morning sunshine, 15°C",
+        location="Home Espresso Station",
         tags=["coffee", "espresso", "sensory", "rituals"],
-        people=[],
-        source_type=MemorySourceType.QUICK_NOTE,
+        extracted_entities=ExtractedEntities(
+            people=["Tim Wendelboe"],
+            places=["Home Station", "Ethiopia"],
+            dates=["Oct 20"],
+            topics=["espresso", "extraction", "taste profile"],
+            details=["18g in, 42g out, 28 seconds, 9 bars pressure, P64 setting 3.4"]
+        ),
+        personal_notes="Best shot of the bag yet.",
+        privacy_level=PrivacyLevel.PRIVATE,
         collection_ids=[],
         attachments=[
             MemoryAttachment(
                 id="att-002",
                 memory_id="mem-005",
                 user_id=INITIAL_PROFILE.id,
-                file_path="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80",
+                storage_path="https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=800&auto=format&fit=crop&q=80",
                 file_name="espresso-crema.jpg",
                 file_type="image/jpeg",
                 file_size=1820400,
@@ -249,7 +267,7 @@ Grinder setting: 3.4 on the P64 SSP MP burrs. Water composition: 45ppm GH / 20pp
                 created_at=datetime(2024, 10, 20, 8, 32),
             )
         ],
-        links=[],
+        connections=[],
         created_at=datetime(2024, 10, 20, 8, 35),
         updated_at=datetime(2024, 10, 20, 8, 35),
     ),
@@ -257,25 +275,30 @@ Grinder setting: 3.4 on the P64 SSP MP burrs. Water composition: 45ppm GH / 20pp
         id="mem-006",
         user_id=INITIAL_PROFILE.id,
         title="Dr. Aris Thorne on Epigenetic Memory & Biological Clocks",
-        content="""Attended a closed symposium at UCSF with Dr. Aris Thorne. He presented compelling findings on DNA methylation marks functioning as physical biological memories of acute environmental shocks.
+        description="""Attended a closed symposium at UCSF with Dr. Aris Thorne. He presented compelling findings on DNA methylation marks functioning as physical biological memories of acute environmental shocks.
 
 Key takeaway: Cells don't merely run code; they carry scar-tissue records of past winters, fevers, and stress. 
 
 Thorne remarked during Q&A: 'Memory is the fundamental mechanism by which a biological system resists entropy.' When a system can no longer record what broke it yesterday, it dies tomorrow.""",
-        summary="Symposium notes from Dr. Aris Thorne on epigenetic DNA methylation marks and memory as an anti-entropy mechanism.",
-        category=MemoryCategory.READING,
-        sentiment=MemorySentiment.REFLECTIVE,
+        ai_summary="Symposium notes from Dr. Aris Thorne on epigenetic DNA methylation marks and memory as an anti-entropy mechanism.",
+        memory_type=MemoryType.DOCUMENT,
+        category="Ideas & Projects",
         memory_date=datetime(2024, 8, 15, 15, 0),
         is_pinned=False,
-        is_favorite=True,
-        location_name="UCSF Mission Bay, San Francisco",
-        weather="Windy, 17°C",
+        location="UCSF Mission Bay, San Francisco",
         tags=["science", "biology", "genetics", "philosophy"],
-        people=["Dr. Aris Thorne"],
-        source_type=MemorySourceType.DOCUMENT,
+        extracted_entities=ExtractedEntities(
+            people=["Dr. Aris Thorne"],
+            places=["UCSF Mission Bay", "San Francisco"],
+            dates=["August 15, 2024"],
+            topics=["epigenetics", "entropy", "cellular memory"],
+            details=["DNA methylation marks as physical biological memories of acute shock"]
+        ),
+        personal_notes="Look up Thorne's 2023 paper in Nature Neuroscience.",
+        privacy_level=PrivacyLevel.PRIVATE,
         collection_ids=[],
         attachments=[],
-        links=[],
+        connections=[],
         created_at=datetime(2024, 8, 15, 16, 0),
         updated_at=datetime(2024, 8, 15, 16, 0),
     ),
@@ -283,25 +306,30 @@ Thorne remarked during Q&A: 'Memory is the fundamental mechanism by which a biol
         id="mem-007",
         user_id=INITIAL_PROFILE.id,
         title="Morning 10k Run through Pacific Heights to Marina",
-        content="""Ran along Broadway down to Crissy Field and back. Crisp coastal air, fog rolling under the Golden Gate Bridge like frozen smoke. 
+        description="""Ran along Broadway down to Crissy Field and back. Crisp coastal air, fog rolling under the Golden Gate Bridge like frozen smoke. 
 
 Felt strong pacing: 4:48/km steady. Heart rate averaged 146 bpm. The rhythm of footfalls clears out the cognitive debris from the week better than any journal prompt. 
 
 Noted the smell of eucalyptus trees near the Presidio gates.""",
-        summary="10k morning run through Pacific Heights to Crissy Field with brisk pace and Golden Gate fog views.",
-        category=MemoryCategory.EVENT,
-        sentiment=MemorySentiment.POSITIVE,
+        ai_summary="10k morning run through Pacific Heights to Crissy Field with brisk pace and Golden Gate fog views.",
+        memory_type=MemoryType.EVENT,
+        category="Health & Wellness",
         memory_date=datetime(2024, 11, 10, 7, 15),
         is_pinned=False,
-        is_favorite=False,
-        location_name="Crissy Field, San Francisco",
-        weather="Foggy & chilly, 11°C",
+        location="Crissy Field, San Francisco",
         tags=["fitness", "running", "morning", "health"],
-        people=[],
-        source_type=MemorySourceType.QUICK_NOTE,
+        extracted_entities=ExtractedEntities(
+            people=[],
+            places=["Crissy Field", "Pacific Heights", "Golden Gate Bridge", "San Francisco"],
+            dates=["Nov 10, 2024"],
+            topics=["running", "cardio", "clarity"],
+            details=["Pacing 4:48/km steady, average HR 146 bpm"]
+        ),
+        personal_notes="Left calf slightly tight on the uphill return.",
+        privacy_level=PrivacyLevel.PRIVATE,
         collection_ids=[],
         attachments=[],
-        links=[],
+        connections=[],
         created_at=datetime(2024, 11, 10, 8, 40),
         updated_at=datetime(2024, 11, 10, 8, 40),
     ),
@@ -314,10 +342,11 @@ INITIAL_REMINDERS = [
         user_id=INITIAL_PROFILE.id,
         memory_id="mem-003",
         title="Maya's 30th Birthday (Order Munich typography specimen book)",
-        due_date=datetime(2024, 12, 12, 9, 0),
+        notes="Order Munich vintage book before Nov 30",
+        remind_at=datetime(2024, 12, 12, 9, 0),
         reminder_type=ReminderType.BIRTHDAY,
+        recurrence=RecurrenceRule.YEARLY,
         is_completed=False,
-        recurrence_rule=RecurrenceRule.YEARLY,
         memory_title="Maya's Concept on 'Negative Space in Interface Design'",
         created_at=datetime(2024, 10, 28, 14, 35),
     ),
@@ -326,10 +355,11 @@ INITIAL_REMINDERS = [
         user_id=INITIAL_PROFILE.id,
         memory_id="mem-002",
         title="Deliver Agent Memory Prototype before Quarterly Summit with Alex",
-        due_date=datetime(2024, 11, 28, 18, 0),
+        notes="Prepare hybrid retrieval slides",
+        remind_at=datetime(2024, 11, 28, 18, 0),
         reminder_type=ReminderType.FOLLOW_UP,
+        recurrence=RecurrenceRule.NONE,
         is_completed=False,
-        recurrence_rule=RecurrenceRule.NONE,
         memory_title="Late Night Strategy with Alex on Agent Memory Systems",
         created_at=datetime(2024, 11, 4, 22, 35),
     ),
@@ -338,10 +368,11 @@ INITIAL_REMINDERS = [
         user_id=INITIAL_PROFILE.id,
         memory_id="mem-001",
         title="Annual Kyoto Anniversary Reflection: Giou-ji Stillness",
-        due_date=datetime(2025, 10, 14, 9, 0),
-        reminder_type=ReminderType.MEMORY_RECURRENCE,
+        notes="Look back on lessons of Heian stillness",
+        remind_at=datetime(2025, 10, 14, 9, 0),
+        reminder_type=ReminderType.EVENT,
+        recurrence=RecurrenceRule.YEARLY,
         is_completed=False,
-        recurrence_rule=RecurrenceRule.YEARLY,
         memory_title="Kyoto Twilight & The Hidden Moss Garden",
         created_at=datetime(2024, 10, 14, 18, 0),
     ),
@@ -357,7 +388,7 @@ class MemoryRepository:
 
         # Initial link discovery
         for m in self.memories.values():
-            m.links = discover_memory_links(m, list(self.memories.values()))
+            m.connections = discover_memory_links(m, list(self.memories.values()))
 
     def get_all_memories(self, user_id: str) -> List[MemoryResponse]:
         mems = [m for m in self.memories.values() if m.user_id == user_id]
@@ -373,25 +404,25 @@ class MemoryRepository:
             id=mem_id,
             user_id=user_id,
             title=data.title,
-            content=data.content,
-            summary=data.summary or data.content[:160],
-            category=data.category,
-            sentiment=data.sentiment,
+            description=data.description or "",
+            memory_type=data.memory_type,
             memory_date=data.memory_date,
-            is_pinned=data.is_pinned,
-            is_favorite=data.is_favorite,
-            location_name=data.location_name,
-            weather=data.weather,
+            location=data.location,
+            category=data.category,
             tags=data.tags,
-            people=data.people,
-            source_type=data.source_type,
+            ai_summary=data.ai_summary or (data.description[:160] if data.description else ""),
+            extracted_entities=data.extracted_entities,
+            personal_notes=data.personal_notes,
+            source_url=data.source_url,
+            privacy_level=data.privacy_level,
+            is_pinned=data.is_pinned,
             collection_ids=data.collection_ids,
             attachments=attachments or [],
-            links=[],
+            connections=[],
             created_at=now,
             updated_at=now,
         )
-        new_mem.links = discover_memory_links(new_mem, list(self.memories.values()))
+        new_mem.connections = discover_memory_links(new_mem, list(self.memories.values()))
         self.memories[mem_id] = new_mem
         return new_mem
 
@@ -446,7 +477,7 @@ class MemoryRepository:
 
     def get_reminders(self, user_id: str) -> List[ReminderResponse]:
         rems = [r for r in self.reminders.values() if r.user_id == user_id]
-        return sorted(rems, key=lambda x: x.due_date)
+        return sorted(rems, key=lambda x: x.remind_at)
 
     def create_reminder(self, user_id: str, reminder: ReminderResponse) -> ReminderResponse:
         self.reminders[reminder.id] = reminder
@@ -473,7 +504,6 @@ class MemoryRepository:
         for k, v in updates.items():
             if v is not None:
                 p_data[k] = v
-        p_data["updated_at"] = datetime.utcnow()
         self.profile = UserProfile(**p_data)
         return self.profile
 

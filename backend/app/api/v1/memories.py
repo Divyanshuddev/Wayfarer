@@ -6,13 +6,14 @@ from pydantic import BaseModel
 from app.core.database import db_store
 from app.core.security import AuthUser, get_current_user
 from app.schemas.memory import (
+    ExtractedEntities,
     MemoryAttachment,
     MemoryCategory,
     MemoryCreate,
     MemoryResponse,
-    MemorySentiment,
-    MemorySourceType,
+    MemoryType,
     MemoryUpdate,
+    PrivacyLevel,
 )
 from app.services.ai_organizer import organize_memory_content
 from app.services.attachment_parser import (
@@ -35,26 +36,23 @@ class MemoryProcessRequest(BaseModel):
 @router.get("", response_model=List[MemoryResponse])
 async def list_memories(
     category: Optional[str] = None,
-    sentiment: Optional[str] = None,
+    memory_type: Optional[str] = None,
     tag: Optional[str] = None,
     person: Optional[str] = None,
     is_pinned: Optional[bool] = None,
-    is_favorite: Optional[bool] = None,
     current_user: AuthUser = Depends(get_current_user),
 ):
     mems = db_store.get_all_memories(current_user.id)
     if category and category != "all":
-        mems = [m for m in mems if m.category.value == category]
-    if sentiment and sentiment != "all":
-        mems = [m for m in mems if m.sentiment.value == sentiment]
+        mems = [m for m in mems if m.category == category]
+    if memory_type and memory_type != "all":
+        mems = [m for m in mems if m.memory_type.value == memory_type]
     if tag:
         mems = [m for m in mems if tag in m.tags]
     if person:
-        mems = [m for m in mems if person in m.people]
+        mems = [m for m in mems if person in m.extracted_entities.people]
     if is_pinned is not None:
         mems = [m for m in mems if m.is_pinned == is_pinned]
-    if is_favorite is not None:
-        mems = [m for m in mems if m.is_favorite == is_favorite]
     return mems
 
 
@@ -68,17 +66,19 @@ async def create_memory(
 
 @router.post("/upload", response_model=MemoryResponse)
 async def upload_memory_with_file(
-    content: Optional[str] = Form(None),
     title: Optional[str] = Form(None),
-    category: Optional[str] = Form("thought"),
-    sentiment: Optional[str] = Form("neutral"),
+    description: Optional[str] = Form(None),
+    memory_type: Optional[str] = Form("note"),
+    category: Optional[str] = Form("Ideas & Projects"),
+    location: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
     url: Optional[str] = Form(None),
+    personal_notes: Optional[str] = Form(None),
     current_user: AuthUser = Depends(get_current_user),
 ):
     """Handles multipart upload of audio, image OCR, PDF, or scraped web link."""
     extracted_text = ""
-    source_type = MemorySourceType.QUICK_NOTE
+    m_type = MemoryType.NOTE
     attachments = []
 
     if file:
@@ -87,13 +87,15 @@ async def upload_memory_with_file(
         mime = file.content_type or ""
 
         if mime.startswith("audio/") or filename.endswith((".wav", ".mp3", ".m4a")):
-            source_type = MemorySourceType.VOICE
+            m_type = MemoryType.VOICE
             extracted_text = await transcribe_audio_file(file_bytes, filename)
         elif mime.startswith("image/") or filename.endswith((".jpg", ".jpeg", ".png", ".webp")):
-            source_type = MemorySourceType.IMAGE_OCR
+            m_type = MemoryType.PHOTO
             extracted_text = await perform_vision_ocr(file_bytes, mime)
+        elif mime.startswith("video/") or filename.endswith((".mp4", ".mov", ".webm")):
+            m_type = MemoryType.VIDEO
         elif mime == "application/pdf" or filename.endswith(".pdf"):
-            source_type = MemorySourceType.DOCUMENT
+            m_type = MemoryType.DOCUMENT
             extracted_text = extract_text_from_pdf(file_bytes)
 
         import base64
@@ -103,7 +105,7 @@ async def upload_memory_with_file(
                 id=f"att-{uuid.uuid4().hex[:8]}",
                 memory_id="",
                 user_id=current_user.id,
-                file_path=b64,
+                storage_path=b64,
                 file_name=filename,
                 file_type=mime,
                 file_size=len(file_bytes),
@@ -113,30 +115,32 @@ async def upload_memory_with_file(
         )
 
     elif url:
+        m_type = MemoryType.LINK
         scraped = await scrape_url_content(url)
         extracted_text = scraped["content"]
         if not title:
             title = scraped["title"]
 
-    full_body = f"{content or ''}\n\n{extracted_text}".strip()
+    full_body = f"{description or ''}\n\n{extracted_text}".strip()
     if not full_body:
-        full_body = "Memory recorded without content"
+        full_body = "Memory recorded without description"
 
     # AI entity extraction
     organized = await organize_memory_content(full_body)
 
     mem_create = MemoryCreate(
         title=title or organized.title,
-        content=full_body,
-        summary=organized.summary,
-        category=MemoryCategory(category) if category in MemoryCategory.__members__.values() else organized.category,
-        sentiment=MemorySentiment(sentiment) if sentiment in MemorySentiment.__members__.values() else organized.sentiment,
-        memory_date=datetime.utcnow(),
-        is_pinned=False,
-        is_favorite=False,
+        description=full_body,
+        memory_type=MemoryType(memory_type) if memory_type in MemoryType.__members__.values() else m_type,
+        category=category or organized.category,
+        location=location or (organized.extracted_entities.places[0] if organized.extracted_entities.places else None),
         tags=organized.tags,
-        people=organized.people,
-        source_type=source_type,
+        ai_summary=organized.ai_summary,
+        extracted_entities=organized.extracted_entities,
+        personal_notes=personal_notes,
+        source_url=url,
+        privacy_level=PrivacyLevel.PRIVATE,
+        is_pinned=False,
         collection_ids=[]
     )
 
@@ -153,10 +157,11 @@ async def upload_memory_with_file(
                     user_id=current_user.id,
                     memory_id=created_mem.id,
                     title=r.get("title", f"Reminder: {created_mem.title}"),
-                    due_date=datetime.utcnow(),
+                    notes=f"Auto-created from memory: {created_mem.title}",
+                    remind_at=datetime.utcnow(),
                     reminder_type=ReminderType.BIRTHDAY if "birthday" in r.get("reminder_type", "") else ReminderType.FOLLOW_UP,
+                    recurrence=RecurrenceRule.YEARLY if "birthday" in r.get("reminder_type", "") else RecurrenceRule.NONE,
                     is_completed=False,
-                    recurrence_rule=RecurrenceRule.YEARLY if "birthday" in r.get("reminder_type", "") else RecurrenceRule.NONE,
                     memory_title=created_mem.title,
                     created_at=datetime.utcnow(),
                 )
@@ -174,7 +179,7 @@ async def process_raw_memory(req: MemoryProcessRequest):
         text = f"{text}\n\n{scraped['content']}".strip()
 
     extracted = await organize_memory_content(text)
-    embed = await create_embedding(f"{extracted.title} {extracted.summary} {text} {' '.join(extracted.tags)}")
+    embed = await create_embedding(f"{extracted.title} {extracted.ai_summary} {text} {' '.join(extracted.tags)}")
 
     return {
         "success": True,

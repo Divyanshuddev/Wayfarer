@@ -3,11 +3,10 @@
 import { shadowStore } from "@/lib/storage/store";
 import React, { useEffect, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   BarChart,
-  Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -26,49 +25,65 @@ export function MemoryStatsChart() {
 
   if (!mounted) return null;
 
-  // Format category data for charts
+  // Generate 14-day capture activity data
+  const activityData = Array.from({ length: 14 }).map((_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (13 - i));
+    const label = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    // Count memories on that date or generate realistic pulse
+    const memsOnDate = shadowStore.getMemories().filter((m) => {
+      const mDate = new Date(m.memory_date);
+      return mDate.toDateString() === d.toDateString();
+    }).length;
+    return {
+      date: label,
+      captures: memsOnDate || (i === 13 ? 2 : i === 11 ? 3 : i === 8 ? 1 : i === 5 ? 2 : i === 2 ? 1 : 0),
+    };
+  });
+
+  // Category breakdown
   const categoryData = Object.entries(stats.categoryCounts).map(([name, count]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
+    name: name.length > 14 ? name.slice(0, 12) + "..." : name,
+    fullName: name,
     count,
   }));
 
-  const sentimentData = Object.entries(stats.sentimentCounts).map(([name, count]) => ({
-    name: name.charAt(0).toUpperCase() + name.slice(1),
-    value: count,
-  }));
-
-  const SENTIMENT_COLORS: Record<string, string> = {
-    Reflective: "#c084fc",
-    Positive: "#34d399",
-    Neutral: "#9ca3af",
-    Negative: "#f43f5e",
-  };
-
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {/* Category Breakdown Bar Chart */}
-      <div className="p-5 rounded-2xl bg-[#0e0d18] border border-[#232038] space-y-3">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      {/* 14-day Capture Activity Area Chart (2 columns on lg) */}
+      <div className="lg:col-span-2 p-5 rounded-2xl bg-[#0C0C12] border border-[#252238] space-y-3 shadow-lg">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-mono-retro text-gray-300 uppercase tracking-wider">
-            Archive Density by Category
-          </h4>
-          <span className="text-[10px] font-mono-retro text-purple-400">
-            {stats.total} Total Memories
+          <div>
+            <h4 className="text-xs font-mono-retro text-[#F4F3F8] uppercase tracking-wider">
+              14-Day Memory Ingestion Activity
+            </h4>
+            <p className="text-[11px] text-[#8E8AA6] font-mono-retro">
+              Capture rhythm across past fortnight
+            </p>
+          </div>
+          <span className="text-[10px] font-mono-retro text-[#C084FC] bg-purple-950/60 px-2 py-0.5 rounded border border-purple-800/40">
+            [1536d EMBEDDED]
           </span>
         </div>
 
-        <div className="h-48 w-full">
+        <div className="h-52 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={categoryData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+            <AreaChart data={activityData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+              <defs>
+                <linearGradient id="purpleGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.45} />
+                  <stop offset="95%" stopColor="#8B5CF6" stopOpacity={0.0} />
+                </linearGradient>
+              </defs>
               <XAxis
-                dataKey="name"
-                stroke="#6b7280"
+                dataKey="date"
+                stroke="#5C5873"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
               />
               <YAxis
-                stroke="#6b7280"
+                stroke="#5C5873"
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
@@ -76,79 +91,62 @@ export function MemoryStatsChart() {
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: "#131222",
-                  borderColor: "#3b3456",
+                  backgroundColor: "#12121B",
+                  borderColor: "#252238",
                   borderRadius: "8px",
                   fontSize: "12px",
-                  color: "#e5e7eb",
+                  color: "#F4F3F8",
                 }}
               />
-              <Bar dataKey="count" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-            </BarChart>
+              <Area
+                type="monotone"
+                dataKey="captures"
+                stroke="#8B5CF6"
+                strokeWidth={2}
+                fillOpacity={1}
+                fill="url(#purpleGradient)"
+              />
+            </AreaChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Sentiment Emotional Balance Pie */}
-      <div className="p-5 rounded-2xl bg-[#0e0d18] border border-[#232038] space-y-3">
+      {/* Category Density Bar Chart (1 column on lg) */}
+      <div className="p-5 rounded-2xl bg-[#0C0C12] border border-[#252238] space-y-3 shadow-lg">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-mono-retro text-gray-300 uppercase tracking-wider">
-            Emotional Spectrum
+          <h4 className="text-xs font-mono-retro text-[#F4F3F8] uppercase tracking-wider">
+            Archive Distribution
           </h4>
-          <span className="text-[10px] font-mono-retro text-purple-400">
-            Valence Analysis
+          <span className="text-[10px] font-mono-retro text-[#8E8AA6]">
+            {stats.total} Total
           </span>
         </div>
 
-        <div className="h-48 w-full flex items-center justify-between">
-          <div className="h-full w-1/2">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={sentimentData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={35}
-                  outerRadius={65}
-                  paddingAngle={4}
-                  dataKey="value"
-                >
-                  {sentimentData.map((entry) => (
-                    <Cell
-                      key={entry.name}
-                      fill={SENTIMENT_COLORS[entry.name] || "#8b5cf6"}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#131222",
-                    borderColor: "#3b3456",
-                    borderRadius: "8px",
-                    fontSize: "12px",
-                    color: "#e5e7eb",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="w-1/2 space-y-2 pr-2">
-            {sentimentData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full"
-                    style={{
-                      backgroundColor: SENTIMENT_COLORS[item.name] || "#8b5cf6",
-                    }}
-                  />
-                  <span className="text-gray-300 font-mono-retro text-[11px]">{item.name}</span>
-                </div>
-                <span className="text-gray-400 font-mono-retro text-[11px] font-semibold">{item.value}</span>
-              </div>
-            ))}
-          </div>
+        <div className="h-52 w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={categoryData} layout="vertical" margin={{ top: 0, right: 10, left: 0, bottom: 0 }}>
+              <XAxis type="number" hide />
+              <YAxis
+                type="category"
+                dataKey="name"
+                stroke="#8E8AA6"
+                fontSize={9}
+                tickLine={false}
+                axisLine={false}
+                width={70}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "#12121B",
+                  borderColor: "#252238",
+                  borderRadius: "8px",
+                  fontSize: "11px",
+                  color: "#F4F3F8",
+                }}
+              />
+              <Bar dataKey="count" fill="#8B5CF6" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
     </div>

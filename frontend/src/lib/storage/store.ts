@@ -1,6 +1,7 @@
 import {
   Collection,
   Memory,
+  MemoryConnection,
   MemoryLink,
   Profile,
   Reminder,
@@ -48,7 +49,7 @@ export function generateDeterministicEmbedding(text: string): number[] {
     .replace(/[^a-z0-9 ]/g, "")
     .split(/\s+/)
     .filter((w) => w.length > 2 && !STOP_WORDS.has(w));
-  const dims = 64; // compact projection vector for fast browser cosine math
+  const dims = 64;
   const vector = new Array(dims).fill(0);
 
   for (let i = 0; i < words.length; i++) {
@@ -87,7 +88,7 @@ class ShadowStore {
   private memories: Memory[] = [];
   private collections: Collection[] = [];
   private reminders: Reminder[] = [];
-  private links: MemoryLink[] = [];
+  private links: MemoryConnection[] = [];
   private profile: Profile = initialProfile;
   private initialized = false;
   private listeners: Set<() => void> = new Set();
@@ -179,20 +180,33 @@ class ShadowStore {
       id,
       user_id: this.profile.id,
       title: data.title || "Untitled Memory",
-      content: data.content || "",
-      summary: data.summary || data.content?.slice(0, 160) || "",
-      category: data.category || "thought",
-      sentiment: data.sentiment || "neutral",
+      description: data.description || data.content || "",
+      content: data.content || data.description || "",
+      summary: data.summary || data.ai_summary || data.content?.slice(0, 160) || "",
+      ai_summary: data.ai_summary || data.summary || data.content?.slice(0, 160) || "",
+      category: data.category || "Ideas & Projects",
+      sentiment: data.sentiment || "reflective",
+      memory_type: data.memory_type || "note",
+      source_type: data.source_type || data.memory_type || "note",
       memory_date: data.memory_date || now,
       is_pinned: Boolean(data.is_pinned),
       is_favorite: Boolean(data.is_favorite),
-      location_name: data.location_name || null,
+      location: data.location || data.location_name || null,
+      location_name: data.location_name || data.location || null,
       location_coordinates: data.location_coordinates || null,
       weather: data.weather || null,
       tags: Array.isArray(data.tags) ? data.tags : [],
       people: Array.isArray(data.people) ? data.people : [],
-      source_type: data.source_type || "quick_note",
+      extracted_entities: data.extracted_entities || {
+        people: data.people || [],
+        places: data.location ? [data.location] : [],
+        dates: [],
+        topics: data.tags || [],
+        details: [],
+      },
       attachments: data.attachments || [],
+      connections: [],
+      links: [],
       collection_ids: data.collection_ids || [],
       created_at: now,
       updated_at: now,
@@ -269,8 +283,10 @@ class ShadowStore {
           source_memory_id: newMem.id,
           target_memory_id: mem.id,
           link_type: "related",
+          similarity_score: 0.85,
           confidence_score: 0.85,
           reasoning: `Shared connection with ${sharedPeople.join(", ")}`,
+          connection_reason: `Shared connection with ${sharedPeople.join(", ")}`,
           created_at: new Date().toISOString(),
         });
       } else if (sharedTags.length >= 2) {
@@ -280,21 +296,23 @@ class ShadowStore {
           source_memory_id: newMem.id,
           target_memory_id: mem.id,
           link_type: "related",
+          similarity_score: 0.75,
           confidence_score: 0.75,
           reasoning: `Thematic overlap across topics: ${sharedTags.join(", ")}`,
+          connection_reason: `Thematic overlap across topics: ${sharedTags.join(", ")}`,
           created_at: new Date().toISOString(),
         });
       }
     }
   }
 
-  public getLinksForMemory(memoryId: string): (MemoryLink & { connectedMemory: Memory })[] {
+  public getLinksForMemory(memoryId: string): (MemoryConnection & { connectedMemory: Memory })[] {
     this.init();
     const relevantLinks = this.links.filter(
       (l) => l.source_memory_id === memoryId || l.target_memory_id === memoryId
     );
 
-    const result: (MemoryLink & { connectedMemory: Memory })[] = [];
+    const result: (MemoryConnection & { connectedMemory: Memory })[] = [];
     for (const link of relevantLinks) {
       const targetId = link.source_memory_id === memoryId ? link.target_memory_id : link.source_memory_id;
       const connectedMemory = this.getMemory(targetId);
@@ -354,7 +372,8 @@ class ShadowStore {
       name: data.name || "New Collection",
       description: data.description || "",
       icon: data.icon || "folder",
-      color: data.color || "#8b5cf6",
+      accent_shade: data.accent_shade || data.color || "#8B5CF6",
+      color: data.color || data.accent_shade || "#8B5CF6",
       is_smart: Boolean(data.is_smart),
       filter_criteria: data.filter_criteria || null,
       created_at: now,
@@ -384,7 +403,6 @@ class ShadowStore {
     this.init();
     const initialLen = this.collections.length;
     this.collections = this.collections.filter((c) => c.id !== id);
-    // remove collection reference from memories
     this.memories.forEach((m) => {
       if (m.collection_ids) {
         m.collection_ids = m.collection_ids.filter((cid) => cid !== id);
@@ -402,7 +420,7 @@ class ShadowStore {
   public getReminders(): Reminder[] {
     this.init();
     return [...this.reminders].sort(
-      (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime()
+      (a, b) => new Date(a.remind_at || a.due_date).getTime() - new Date(b.remind_at || b.due_date).getTime()
     );
   }
 
@@ -414,10 +432,13 @@ class ShadowStore {
       user_id: this.profile.id,
       memory_id: data.memory_id || null,
       title: data.title || "Untitled Reminder",
-      due_date: data.due_date || new Date().toISOString(),
+      notes: data.notes || null,
+      remind_at: data.remind_at || data.due_date || new Date().toISOString(),
+      due_date: data.due_date || data.remind_at || new Date().toISOString(),
       reminder_type: data.reminder_type || "custom",
+      recurrence: data.recurrence || data.recurrence_rule || "none",
+      recurrence_rule: data.recurrence_rule || data.recurrence || "none",
       is_completed: false,
-      recurrence_rule: data.recurrence_rule || "none",
       memory_title: data.memory_title,
       created_at: new Date().toISOString(),
     };
@@ -464,7 +485,6 @@ class ShadowStore {
 
     let candidateMemories = this.memories;
 
-    // Apply strict metadata filters first
     if (filters?.category && filters.category !== "all") {
       candidateMemories = candidateMemories.filter((m) => m.category === filters.category);
     }
@@ -498,13 +518,11 @@ class ShadowStore {
       let keywordScore = 0;
       const reasons: string[] = [];
 
-      // Exact phrase match
       if (fullText.includes(query)) {
         keywordScore += 0.6;
         reasons.push(`Contains exact phrase "${query}"`);
       }
 
-      // Keyword token match
       const queryTokens = query
         .replace(/[^a-z0-9 ]/g, " ")
         .split(/\s+/)
@@ -529,7 +547,6 @@ class ShadowStore {
         }
       }
 
-      // Cosine vector similarity
       let semanticScore = 0;
       if (queryVector) {
         const memVector = generateDeterministicEmbedding(fullText);
@@ -541,13 +558,11 @@ class ShadowStore {
         Math.max(0.0, keywordScore * 0.6 + semanticScore * 0.4)
       );
 
-      // Require meaningful semantic alignment or genuine keyword match
       if (reasons.length > 0 || (queryTokens.length > 0 && matchedTokens > 0) || semanticScore >= 0.5) {
         const reasonText = reasons.length > 0
           ? reasons.slice(0, 2).join(" • ")
           : `Semantic match (${Math.round(semanticScore * 100)}%)`;
 
-        // Extract relevant snippet around query
         let snippet = mem.summary || mem.content.slice(0, 180);
         const matchToken = queryTokens[0] || query;
         const matchIndex = mem.content.toLowerCase().indexOf(matchToken);
@@ -577,19 +592,18 @@ class ShadowStore {
     const pinned = this.memories.filter((m) => m.is_pinned).length;
     const withAttachments = this.memories.filter((m) => m.attachments && m.attachments.length > 0).length;
 
-    // Category distribution
     const categoryCounts: Record<string, number> = {};
     this.memories.forEach((m) => {
       categoryCounts[m.category] = (categoryCounts[m.category] || 0) + 1;
     });
 
-    // Sentiment distribution
     const sentimentCounts: Record<string, number> = {};
     this.memories.forEach((m) => {
-      sentimentCounts[m.sentiment] = (sentimentCounts[m.sentiment] || 0) + 1;
+      if (m.sentiment) {
+        sentimentCounts[m.sentiment] = (sentimentCounts[m.sentiment] || 0) + 1;
+      }
     });
 
-    // Top tags
     const tagCounts: Record<string, number> = {};
     this.memories.forEach((m) => {
       m.tags.forEach((t) => {
@@ -617,7 +631,6 @@ class ShadowStore {
     this.init();
     if (this.memories.length === 0) return null;
 
-    // Pick a memory from at least 7 days ago if available, or a random favorite/reflective memory
     const eligible = this.memories.filter((m) => m.sentiment === "reflective" || m.is_favorite);
     const pool = eligible.length > 0 ? eligible : this.memories;
     const index = Math.floor(Math.random() * pool.length);

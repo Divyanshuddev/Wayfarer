@@ -36,7 +36,9 @@ def retrieve_relevant_memories(
     scored: List[Tuple[MemoryResponse, float]] = []
 
     for m in all_memories:
-        full_text = f"{m.title} {m.content} {m.summary} {' '.join(m.tags)} {' '.join(m.people)} {m.location_name or ''}".lower()
+        people_str = " ".join(m.extracted_entities.people)
+        places_str = " ".join(m.extracted_entities.places)
+        full_text = f"{m.title} {m.description} {m.ai_summary} {' '.join(m.tags)} {people_str} {places_str} {m.location or ''}".lower()
 
         token_matches = 0
         lexical_score = 0.0
@@ -52,9 +54,12 @@ def retrieve_relevant_memories(
                 elif any(token in t.lower() for t in m.tags):
                     token_matches += 1
                     lexical_score += 0.35
-                elif any(token in p.lower() for p in m.people):
+                elif any(token in p.lower() for p in m.extracted_entities.people):
                     token_matches += 1
                     lexical_score += 0.45
+                elif any(token in pl.lower() for pl in m.extracted_entities.places):
+                    token_matches += 1
+                    lexical_score += 0.4
                 elif token in full_text:
                     token_matches += 1
                     lexical_score += 0.2
@@ -89,7 +94,7 @@ async def answer_rag_query(query: str, all_memories: List[MemoryResponse]) -> Ch
             memory_id=m.id,
             title=m.title,
             date=m.memory_date.strftime("%b %d, %Y"),
-            snippet=m.summary or m.content[:140]
+            snippet=m.ai_summary or m.description[:140]
         )
         for m in retrieved_mems
     ]
@@ -99,15 +104,15 @@ async def answer_rag_query(query: str, all_memories: List[MemoryResponse]) -> Ch
         # High-fidelity deterministic grounded synthesizer
         top = retrieved_mems[0]
         date_str = top.memory_date.strftime("%B %d, %Y")
-        answer = f'According to your memory from {date_str}, [Memory #{top.id}: "{top.title}"]:\n\n"{top.summary or top.content[:220]}"'
-        if top.location_name:
-            answer += f"\n\n• Location: {top.location_name}"
-        if top.people:
-            answer += f"\n• People present: {', '.join(top.people)}"
+        answer = f'According to your memory from {date_str}, [Memory #{top.id}: "{top.title}"]:\n\n"{top.ai_summary or top.description[:220]}"'
+        if top.location:
+            answer += f"\n\n• Location: {top.location}"
+        if top.extracted_entities.people:
+            answer += f"\n• People present: {', '.join(top.extracted_entities.people)}"
 
         if len(retrieved_mems) > 1:
             second = retrieved_mems[1]
-            answer += f'\n\nYou also captured a related note in [Memory #{second.id}: "{second.title}"]: "{second.summary or second.content[:160]}"'
+            answer += f'\n\nYou also captured a related note in [Memory #{second.id}: "{second.title}"]: "{second.ai_summary or second.description[:160]}"'
 
         return ChatResponse(
             answer=answer,
@@ -120,11 +125,11 @@ async def answer_rag_query(query: str, all_memories: List[MemoryResponse]) -> Ch
         f"--- MEMORY #{m.id} ---\n"
         f"Title: {m.title}\n"
         f"Date: {m.memory_date.isoformat()}\n"
-        f"Category: {m.category} | Sentiment: {m.sentiment}\n"
-        f"Location: {m.location_name or 'Unspecified'}\n"
-        f"People: {', '.join(m.people) or 'None'}\n"
+        f"Category: {m.category} | Type: {m.memory_type.value}\n"
+        f"Location: {m.location or 'Unspecified'}\n"
+        f"People: {', '.join(m.extracted_entities.people) or 'None'}\n"
         f"Tags: {', '.join(m.tags) or 'None'}\n"
-        f"Content:\n{m.content}\n"
+        f"Description:\n{m.description}\n"
         f"-------------------------"
         for m in retrieved_mems
     )
@@ -150,7 +155,7 @@ async def answer_rag_query(query: str, all_memories: List[MemoryResponse]) -> Ch
         print(f"RAG query exception: {e}")
         top = retrieved_mems[0]
         return ChatResponse(
-            answer=f'According to your memory [Memory #{top.id}: "{top.title}"]: {top.summary or top.content[:160]}',
+            answer=f'According to your memory [Memory #{top.id}: "{top.title}"]: {top.ai_summary or top.description[:160]}',
             citations=citations,
             is_grounded=True,
             unfound=False

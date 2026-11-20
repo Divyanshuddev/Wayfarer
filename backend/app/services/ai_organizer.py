@@ -3,10 +3,10 @@ import re
 from datetime import datetime
 from typing import List, Optional
 from app.core.openai_client import get_openai_client
-from app.schemas.memory import ExtractedEntities, MemoryCategory, MemorySentiment
+from app.schemas.memory import AIExtractionOutput, ExtractedEntities, MemoryCategory
 
 
-def extract_entities_heuristic(text: str) -> ExtractedEntities:
+def extract_entities_heuristic(text: str) -> AIExtractionOutput:
     """Fast, local rule-based NLP extraction when OpenAI is not configured."""
     cleaned = text.strip()
     lines = [line.strip() for line in cleaned.split("\n") if line.strip()]
@@ -15,46 +15,29 @@ def extract_entities_heuristic(text: str) -> ExtractedEntities:
 
     lower = cleaned.lower()
 
-    # Category classification
-    category = MemoryCategory.THOUGHT
-    if any(k in lower for k in ["dr.", "spoke with", "talked to", "said", "meeting", "dinner with", "chat with"]):
-        category = MemoryCategory.CONVERSATION
-    elif any(k in lower for k in ["read", "book", "quote", "chapter", "author", "article", "paper"]):
-        category = MemoryCategory.READING
-    elif any(k in lower for k in ["visited", "flight", "trip", "hotel", "ran", "walked", "temple", "concert", "museum"]):
-        category = MemoryCategory.EVENT
-    elif any(k in lower for k in ["project", "strategy", "roadmap", "deploy", "architecture", "client", "code"]):
-        category = MemoryCategory.WORK
-    elif any(k in lower for k in ["idea", "concept", "what if", "invention", "hypothesis"]):
-        category = MemoryCategory.IDEA
-    elif any(k in lower for k in ["watched", "movie", "film", "podcast", "album", "song", "episode"]):
-        category = MemoryCategory.MEDIA
-    elif any(k in lower for k in ["kyoto", "san francisco", "berlin", "paris", "tokyo", "cafe", "roastery"]):
-        category = MemoryCategory.LOCATION
-
-    # Sentiment classification
-    positive_words = ["great", "wonderful", "mastery", "silence", "delight", "love", "clarity", "vibrant", "strong", "clean", "beautiful"]
-    reflective_words = ["ponder", "stillness", "entropy", "virtue", "meaning", "memory", "philosoph", "insight", "heian", "quiet", "negative space"]
-    negative_words = ["failed", "stress", "broken", "exhausted", "pain", "sad", "disaster", "urgent", "frustrated"]
-
-    pos_score = sum(1 for w in positive_words if w in lower)
-    ref_score = sum(1 for w in reflective_words if w in lower)
-    neg_score = sum(1 for w in negative_words if w in lower)
-
-    sentiment = MemorySentiment.NEUTRAL
-    if ref_score >= 2 or (ref_score > pos_score and ref_score > neg_score):
-        sentiment = MemorySentiment.REFLECTIVE
-    elif pos_score > neg_score and pos_score > 0:
-        sentiment = MemorySentiment.POSITIVE
-    elif neg_score > pos_score:
-        sentiment = MemorySentiment.NEGATIVE
+    # Category classification based on the 8 exact categories
+    category = "Ideas & Projects"
+    if any(k in lower for k in ["talked to", "said", "meeting", "spoke with", "interview", "discussion", "dialogue"]):
+        category = "Conversations"
+    elif any(k in lower for k in ["kyoto", "flight", "trip", "hotel", "travel", "japan", "berlin", "paris", "visit"]):
+        category = "Places & Travel"
+    elif any(k in lower for k in ["receipt", "invoice", "tax", "contract", "pdf", "agreement", "lease", "warranty"]):
+        category = "Documents & Receipts"
+    elif any(k in lower for k in ["watched", "movie", "film", "podcast", "book", "read", "album", "music", "recommend"]):
+        category = "Media & Recommendations"
+    elif any(k in lower for k in ["run", "workout", "gym", "health", "doctor", "sleep", "diet", "prescription", "heart rate"]):
+        category = "Health & Wellness"
+    elif any(k in lower for k in ["birthday", "anniversary", "graduat", "wedding", "born", "promot", "milestone"]):
+        category = "Life Milestones"
+    elif any(k in lower for k in ["friend", "dinner", "party", "family", "moment", "alex", "maya", "rahul"]):
+        category = "People & Experiences"
 
     # Tag extraction
     tags = set(re.findall(r"#([a-zA-Z0-9_-]+)", cleaned))
     potential_tags = [
         "ai", "tech", "design", "travel", "coffee", "books", "minimalism",
         "architecture", "fitness", "running", "science", "kyoto", "japan",
-        "san-francisco", "philosophy", "espresso", "biology", "systems"
+        "san-francisco", "philosophy", "espresso", "biology", "systems", "startup"
     ]
     for pt in potential_tags:
         if pt in lower:
@@ -67,37 +50,49 @@ def extract_entities_heuristic(text: str) -> ExtractedEntities:
         if m not in ["The", "A", "An", "He", "She", "It", "My", "Our"]:
             people.add(m)
 
+    # Places mentioned
+    places = set()
+    place_candidates = ["Kyoto", "San Francisco", "Zurich", "Berlin", "Tokyo", "Munich", "Pacific Heights", "Hayes Valley"]
+    for pc in place_candidates:
+        if pc.lower() in lower:
+            places.add(pc)
+
     # Detected reminders
     detected_reminders = []
     if "birthday" in lower:
         detected_reminders.append({
             "title": f"Birthday mentioned in: {title}",
-            "due_date": datetime.utcnow().isoformat(),
+            "remind_at": datetime.utcnow().isoformat(),
             "reminder_type": "birthday"
         })
     elif any(k in lower for k in ["remember to", "need to", "follow up", "deadline", "by friday", "by next"]):
         detected_reminders.append({
             "title": f"Follow-up: {title}",
-            "due_date": datetime.utcnow().isoformat(),
+            "remind_at": datetime.utcnow().isoformat(),
             "reminder_type": "follow_up"
         })
 
-    summary = " ".join(lines[:2])[:160] + ("..." if len(cleaned) > 160 else "")
+    ai_summary = " ".join(lines[:2])[:160] + ("..." if len(cleaned) > 160 else "")
 
-    return ExtractedEntities(
-        title=title,
-        summary=summary,
-        category=category,
-        sentiment=sentiment,
-        tags=list(tags)[:6],
+    entities = ExtractedEntities(
         people=list(people)[:5],
-        location=None,
-        memory_date=None,
-        detected_reminders=detected_reminders
+        places=list(places)[:3],
+        dates=[],
+        topics=list(tags)[:5],
+        details=[line[:80] for line in lines[1:3]]
+    )
+
+    return AIExtractionOutput(
+        title=title,
+        ai_summary=ai_summary,
+        category=category,
+        tags=list(tags)[:6],
+        extracted_entities=entities,
+        detected_reminders=detected_reminders,
     )
 
 
-async def organize_memory_content(text: str) -> ExtractedEntities:
+async def organize_memory_content(text: str) -> AIExtractionOutput:
     """Uses GPT-4o-mini structured JSON outputs or heuristic fallback."""
     client = get_openai_client()
     if not client:
@@ -115,30 +110,38 @@ async def organize_memory_content(text: str) -> ExtractedEntities:
 Extract structured metadata strictly according to this JSON schema:
 {
   "title": "Concise evocative title (max 60 chars)",
-  "summary": "1-2 sentence core distillation (max 180 chars)",
-  "category": "thought" | "event" | "conversation" | "media" | "reading" | "work" | "personal" | "location" | "idea",
-  "sentiment": "positive" | "neutral" | "negative" | "reflective",
+  "ai_summary": "1-2 sentence core distillation (max 180 chars)",
+  "category": "People & Experiences" | "Ideas & Projects" | "Places & Travel" | "Documents & Receipts" | "Media & Recommendations" | "Health & Wellness" | "Conversations" | "Life Milestones",
   "tags": ["lowercase-kebab-tag", ...],
-  "people": ["Full Name", ...],
-  "location": "Location name or null",
-  "memory_date": "ISO date string if mentioned, else null",
-  "detected_reminders": [{"title": "...", "due_date": "...", "reminder_type": "birthday"|"anniversary"|"follow_up"|"custom"}]
+  "extracted_entities": {
+    "people": ["Full Name", ...],
+    "places": ["Location/City", ...],
+    "dates": ["Date references", ...],
+    "topics": ["Key theme", ...],
+    "details": ["Specific nuance or data point", ...]
+  },
+  "detected_reminders": [{"title": "...", "remind_at": "...", "reminder_type": "birthday"|"anniversary"|"follow_up"|"event"|"custom"}]
 }"""
                 },
                 {"role": "user", "content": text}
             ]
         )
         data = json.loads(response.choices[0].message.content or "{}")
-        return ExtractedEntities(
+        raw_ent = data.get("extracted_entities", {})
+        entities = ExtractedEntities(
+            people=raw_ent.get("people", []),
+            places=raw_ent.get("places", []),
+            dates=raw_ent.get("dates", []),
+            topics=raw_ent.get("topics", []),
+            details=raw_ent.get("details", []),
+        )
+        return AIExtractionOutput(
             title=data.get("title", text[:50]),
-            summary=data.get("summary", text[:150]),
-            category=data.get("category", MemoryCategory.THOUGHT),
-            sentiment=data.get("sentiment", MemorySentiment.NEUTRAL),
+            ai_summary=data.get("ai_summary", text[:150]),
+            category=data.get("category", "Ideas & Projects"),
             tags=data.get("tags", []),
-            people=data.get("people", []),
-            location=data.get("location"),
-            memory_date=data.get("memory_date"),
-            detected_reminders=data.get("detected_reminders", [])
+            extracted_entities=entities,
+            detected_reminders=data.get("detected_reminders", []),
         )
     except Exception as e:
         print(f"OpenAI organizer error: {e}")

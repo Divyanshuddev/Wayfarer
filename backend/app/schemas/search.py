@@ -1,11 +1,11 @@
 from typing import List, Optional
 from pydantic import BaseModel, Field
-from app.schemas.memory import MemoryCategory, MemoryResponse, MemorySentiment
+from app.schemas.memory import MemoryCategory, MemoryResponse, MemoryType
 
 
 class SearchFilters(BaseModel):
-    category: Optional[MemoryCategory] = None
-    sentiment: Optional[MemorySentiment] = None
+    category: Optional[str] = None
+    memory_type: Optional[str] = None
     tag: Optional[str] = None
     person: Optional[str] = None
     has_attachments: Optional[bool] = None
