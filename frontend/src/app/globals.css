@@ -103,3 +103,11 @@ body {
   background: rgba(139, 92, 246, 0.1);
   color: #C084FC;
 }
+
+/* Hide Next.js dev tools and indicators */
+nextjs-portal,
+[data-nextjs-dev-tools],
+[data-nextjs-indicator],
+[data-nextjs-dev-overlay] {
+  display: none !important;
+}
